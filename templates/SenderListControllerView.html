@@ -11,11 +11,14 @@
 			</span>
 		</a>
 		<div class="children" data-bind="foreach: senders, visible: sendersExpanded">
-			<div class="item folder-level2 canSelect">
+			<div class="item folder-level2 canSelect"
+				 data-bind="click: function () { $parent.searchMessagesForSender(email); },
+				 css: { 'selected': selected }"
+			>
 				<a class="title" href="javascript: void(0);">
 					<span class="count total" data-bind="text: count"></span>
 					<span class="name">
-						<span class="icon senders"></span>
+						<span class="icon type10"></span>
 						<span class="text" data-bind="text: email"></span>
 					</span>
 				</a>

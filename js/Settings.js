@@ -19,7 +19,7 @@ module.exports = {
 	init: function (appData)
 	{
 		const appDataSection = appData['%ModuleName%'];
-console.log({appDataSection});
+
 		if (!_.isEmpty(appDataSection)) {
 			this.SendersCount = Types.pInt(appDataSection.SendersCount, this.SendersCount);
 			this.TimeFrame = Types.pInt(appDataSection.TimeFrame, this.TimeFrame);
