@@ -1,0 +1,25 @@
+<!-- ko if: visible -->
+	<div class="item folder-level1 canSelect accordion">
+		<a class="title" href="javascript: void(0);">
+			<span class="name">
+				<span class="icon senders"></span>
+				<span class="text" data-bind="i18n: {'key': '%MODULENAME%/LABEL_SENDERS'}"></span>
+				<span class="collapse_handler"
+					  data-bind="css: {'expanded': sendersExpanded(), 'collapsed': !sendersExpanded()},
+					  click: triggerSendersExpanded"
+				></span>
+			</span>
+		</a>
+		<div class="children" data-bind="foreach: senders, visible: sendersExpanded">
+			<div class="item folder-level2 canSelect">
+				<a class="title" href="javascript: void(0);">
+					<span class="count total" data-bind="text: count"></span>
+					<span class="name">
+						<span class="icon senders"></span>
+						<span class="text" data-bind="text: email"></span>
+					</span>
+				</a>
+			</div>
+		</div>
+	</div>
+<!-- /ko -->
