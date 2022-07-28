@@ -28,7 +28,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		FolderType::Sent,
 		FolderType::Drafts,
 		FolderType::Spam,
-		FolderType::Trash,	
+		FolderType::Trash,
 	];
 
 	/**
@@ -46,15 +46,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 	public static function Decorator()
 	{
 		return parent::Decorator();
-	}
-
-	public function GetSavedSenders()
-	{
-		return [
-			'nadinshi@gmail.com' => 7,
-			'notifications@github.com' => 23,
-			'notifications@tasks.clickup.com' => 139,
-		];
 	}
 
 	public function GetSenders($AccountID, $Folders = [], $Period = '')

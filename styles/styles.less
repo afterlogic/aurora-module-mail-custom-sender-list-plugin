@@ -1,3 +1,35 @@
-.folders .title .icon.senders:before {
-	content: "\e619";
+.folders_panel {
+	.folders .title .icon.senders:before {
+		content: "\e619";
+	}
+
+	.link_senders_action {
+		margin: 2px 0 10px 37px;
+		display: inline-block;
+	}
+
+	.last_senders_collapsed {
+		opacity: 0;
+		max-height: 0 !important;
+		visibility: hidden;
+		.transition(~"max-height 0.5s ease 0s, opacity 0.5s ease 0.2s, visibility 0.1s linear 0s");
+	}
+
+	.last_senders_expanded {
+		opacity: 1;
+		visibility: visible;
+		.transition(~"max-height 0.5s ease 0s, opacity 0.5s ease 0.2s, visibility 0s linear 0s");
+	}
+
+	.icon.checkstate {
+		.init-icon-font();
+		&:before {
+			content: "\e607";
+		}
+		.cssanimations &.process:before {
+			-webkit-animation: cycle 0.8s linear infinite;
+			-moz-animation: cycle 0.8s linear infinite;
+			animation: cycle 0.8s linear infinite;
+		}
+	}
 }

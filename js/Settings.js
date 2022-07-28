@@ -7,7 +7,7 @@ const
 ;
 
 module.exports = {
-	SendersCount: 3,
+	NumberOfSendersToDisplay: 3,
 	TimeFrame: 1,
 	SearchIn: 2,
 
@@ -21,7 +21,7 @@ module.exports = {
 		const appDataSection = appData['%ModuleName%'];
 
 		if (!_.isEmpty(appDataSection)) {
-			this.SendersCount = Types.pInt(appDataSection.SendersCount, this.SendersCount);
+			this.NumberOfSendersToDisplay = Types.pInt(appDataSection.NumberOfSendersToDisplay, this.NumberOfSendersToDisplay);
 			this.TimeFrame = Types.pInt(appDataSection.TimeFrame, this.TimeFrame);
 			this.SearchIn = Types.pInt(appDataSection.SearchIn, this.SearchIn);
 		}
@@ -30,13 +30,13 @@ module.exports = {
 	/**
 	 * Updates new settings values after saving on server.
 	 * 
-	 * @param {number} iSendersCount
+	 * @param {number} iNumberOfSendersToDisplay
 	 * @param {number} iTimeFrame
 	 * @param {number} iSearchIn
 	 */
-	update: function (iSendersCount, iTimeFrame, iSearchIn)
+	update: function (iNumberOfSendersToDisplay, iTimeFrame, iSearchIn)
 	{
-		this.SendersCount = iSendersCount;
+		this.NumberOfSendersToDisplay = iNumberOfSendersToDisplay;
 		this.TimeFrame = iTimeFrame;
 		this.SearchIn = iSearchIn;
 	}

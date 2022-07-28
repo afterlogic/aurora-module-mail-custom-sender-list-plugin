@@ -5,51 +5,98 @@ const
 	ko = require('knockout'),
 
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
+	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 
-	App = require('%PathToCoreWebclientModule%/js/App.js'),
 	Ajax = require('%PathToCoreWebclientModule%/js/Ajax.js'),
 	ModulesManager = require('%PathToCoreWebclientModule%/js/ModulesManager.js'),
+	Storage = require('%PathToCoreWebclientModule%/js/Storage.js'),
 
 	MailCache = ModulesManager.run('MailWebclient', 'getMailCache'),
-	MailSettings = require('modules/MailWebclient/js/Settings.js')
+	MailSettings = require('modules/MailWebclient/js/Settings.js'),
+
+	Settings = require('modules/%ModuleName%/js/Settings.js')
 ;
+
+function getCurrentSearchSender (senders)
+{
+	if (!MailCache || !MailCache.uidList()) {
+		return null;
+	}
+
+	const
+		uidList = MailCache.uidList(),
+		inboxFolderFullName = MailCache.folderList().inboxFolderFullName(),
+		search = uidList.search() || ''
+	;
+	if (
+		search !== '' &&
+		uidList.sFullName === inboxFolderFullName &&
+		uidList.filters() === '' &&
+		uidList.sortBy() === MailSettings.MessagesSortBy.DefaultSortBy &&
+		uidList.sortOrder() === MailSettings.MessagesSortBy.DefaultSortOrder
+	) {
+		return senders.find(sender => {
+			return search === `from:${sender.email} folders:all`;
+		}) || null;
+	}
+	return null;
+}
 
 function CSenderListControllerView()
 {
-	this.visible = ko.observable(false);
 	this.senders = ko.observableArray([]);
 	this.sendersExpanded = ko.observable(false);
+	this.isLoading = ko.observable(false);
 
-	ko.computed(function () {
-		const
-			uidList = MailCache.uidList(),
-			accountId = uidList.iAccountId,
-			folderFullName = uidList.sFullName,
-			inboxFolder = MailCache.folderList().inboxFolder(),
-			inboxFolderFullName = MailCache.folderList().inboxFolderFullName(),
-			search = uidList.search(),
-			filters = uidList.filters(),
-			sortBy = uidList.sortBy(),
-			sortOrder = uidList.sortOrder(),
-			sendersSearches = this.senders().map(sender => `from:${sender.email} folders:all`)
-		;
-		if (folderFullName === inboxFolderFullName && search !== '' && filters === '' &&
-				sortBy === MailSettings.MessagesSortBy.DefaultSortBy &&
-				sortOrder === MailSettings.MessagesSortBy.DefaultSortOrder
-		) {
-			this.senders().forEach(sender => {
-				sender.selected(search === `from:${sender.email} folders:all`);
-				if (sender.selected() && inboxFolder) {
-					inboxFolder.selected(false);
-					this.sendersExpanded(true);
-				}
-			});
+	this.hideLastSenders = ko.computed(() => {
+		return Settings.NumberOfSendersToDisplay > 0
+			   && Settings.NumberOfSendersToDisplay < (this.senders().length - 1);
+	});
+	this.firstSenders = ko.computed(() => {
+		if (this.hideLastSenders()) {
+			return this.senders().slice(0, Settings.NumberOfSendersToDisplay);
 		} else {
-			this.senders().forEach(sender => {
-				sender.selected(false);
-			});
+			return this.senders();
 		}
-	}, this);
+	});
+	this.lastSenders = ko.computed(() => {
+		if (this.hideLastSenders()) {
+			return this.senders().slice(Settings.NumberOfSendersToDisplay);
+		} else {
+			return [];
+		}
+	});
+	this.showLastSenders = ko.observable(false);
+	this.lastSendersMaxHeight = ko.observable(0);
+	this.lastSendersDom = ko.observable(null);
+	this.senderListDivided = ko.computed(() => {
+		return this.lastSenders().length > 0;
+	});
+
+	if (MailCache) {
+		this.selectedSender = null;
+		ko.computed(() => {
+			const sender = getCurrentSearchSender(this.senders());
+			if (this.selectedSender) {
+				this.selectedSender.selected(false);
+				this.selectedSender = null;
+			}
+			if (sender) {
+				const inboxFolder = MailCache.folderList().inboxFolder();
+				inboxFolder.selected(false);
+				sender.selected(true);
+				this.selectedSender = sender;
+				this.sendersExpanded(true);
+				if (this.lastSenders().find(lastSender => lastSender.email === sender.email)) {
+					this.setLastSendersMaxHeight();
+					this.showLastSenders(true);
+				}
+			}
+		});
+		MailCache.currentAccountId.subscribe(() => {
+			this.populateSenders();
+		});
+	}
 }
 
 CSenderListControllerView.prototype.ViewTemplate = '%ModuleName%_SenderListControllerView';
@@ -59,24 +106,53 @@ CSenderListControllerView.prototype.triggerSendersExpanded = function ()
 	this.sendersExpanded(!this.sendersExpanded());
 };
 
+CSenderListControllerView.prototype.triggerShowLastSenders = function ()
+{
+	this.setLastSendersMaxHeight();
+	this.showLastSenders(!this.showLastSenders());
+};
+
+CSenderListControllerView.prototype.setLastSendersMaxHeight = function ()
+{
+	if (this.lastSendersDom()) {
+		this.lastSendersMaxHeight(this.lastSendersDom().children().first().outerHeight());
+	}
+};
+
 CSenderListControllerView.prototype.onShow = function ()
 {
-	if (!_.isFunction(App.currentAccountId)) {
+	this.setLastSendersMaxHeight();
+	this.populateSenders();
+};
+
+CSenderListControllerView.prototype.populateSenders = function ()
+{
+	if (!MailCache) {
 		return;
 	}
+	const senders = Types.pArray(Storage.getData(`customSenderList-${MailCache.currentAccountId()}`));
+	this.senders(senders.map(sender => {
+		return {
+			email: sender.email,
+			count: sender.count,
+			selected: ko.observable(false)
+		};
+	}));
 
 	const parameters = {
-		'AccountID': App.currentAccountId()
+		'AccountID': MailCache.currentAccountId()
 	};
-	Ajax.send('%ModuleName%', 'GetSavedSenders', parameters, (response, request) => {
+	this.isLoading(true);
+	Ajax.send('%ModuleName%', 'GetSenders', parameters, (response, request) => {
+		this.isLoading(false);
 		if (response && response.Result) {
 			const senders = Object.keys(response.Result).map(function(email) {
 				const count = response.Result[email];
-				return {email, count, selected: ko.observable(false)};
+				return { email, count, selected: ko.observable(false) };
 			});
 			senders.sort((a, b) => b.count - a.count);
-			this.visible(true);
-			this.senders(senders);
+			this.senders(senders.slice(0, 20));
+			Storage.setData(`customSenderList-${parameters.AccountID}`, senders);
 		}
 	});
 };

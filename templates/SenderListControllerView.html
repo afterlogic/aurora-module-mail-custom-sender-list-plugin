@@ -1,28 +1,61 @@
-<!-- ko if: visible -->
-	<div class="item folder-level1 canSelect accordion">
-		<a class="title" href="javascript: void(0);">
-			<span class="name">
-				<span class="icon senders"></span>
-				<span class="text" data-bind="i18n: {'key': '%MODULENAME%/LABEL_SENDERS'}"></span>
-				<span class="collapse_handler"
-					  data-bind="css: {'expanded': sendersExpanded(), 'collapsed': !sendersExpanded()},
-					  click: triggerSendersExpanded"
-				></span>
-			</span>
-		</a>
-		<div class="children" data-bind="foreach: senders, visible: sendersExpanded">
+<div class="item folder-level1 canSelect accordion">
+	<a class="title" href="javascript: void(0);">
+		<span class="count icon checkstate" data-bind="css: { 'process': isLoading }, click: populateSenders"></span>
+		<span class="name">
+			<span class="icon senders"></span>
+			<span class="text" data-bind="i18n: {'key': '%MODULENAME%/LABEL_SENDERS'}"></span>
+			<span class="collapse_handler"
+				  data-bind="css: {'expanded': sendersExpanded(), 'collapsed': !sendersExpanded()},
+				  click: triggerSendersExpanded"
+			></span>
+		</span>
+	</a>
+	<div class="children" data-bind="visible: sendersExpanded">
+		<!-- ko foreach: firstSenders -->
 			<div class="item folder-level2 canSelect"
 				 data-bind="click: function () { $parent.searchMessagesForSender(email); },
 				 css: { 'selected': selected }"
 			>
-				<a class="title" href="javascript: void(0);">
+				<span class="title">
 					<span class="count total" data-bind="text: count"></span>
 					<span class="name">
 						<span class="icon type10"></span>
 						<span class="text" data-bind="text: email"></span>
 					</span>
-				</a>
+				</span>
+			</div>
+		<!-- /ko -->
+		<!-- ko if: senderListDivided -->
+		<div data-bind="initDom: lastSendersDom, style: {'max-height': lastSendersMaxHeight() + 'px'},
+			 css: {'last_senders_expanded': showLastSenders, 'last_senders_collapsed': !showLastSenders()}"
+		>
+			<div>
+				<!-- ko foreach: lastSenders -->
+				<div class="item folder-level2 canSelect"
+					 data-bind="click: function () { $parent.searchMessagesForSender(email); },
+					 css: { 'selected': selected }"
+				>
+					<span class="title">
+						<span class="count total" data-bind="text: count"></span>
+						<span class="name">
+							<span class="icon type10"></span>
+							<span class="text" data-bind="text: email"></span>
+						</span>
+					</span>
+				</div>
+				<!-- /ko -->
 			</div>
 		</div>
+		<!-- /ko -->
+		<div class="item">
+			<span class="link link_senders_action"
+			   data-bind="visible: senderListDivided() && !showLastSenders(),
+			   i18n: {'key': '%MODULENAME%/ACTION_MORE_SENDERS'}, click: triggerShowLastSenders"
+			></span>
+			<span class="link link_senders_action"
+			   data-bind="visible: senderListDivided() && showLastSenders(),
+			   i18n: {'key': '%MODULENAME%/ACTION_LESS_SENDERS'}, click: triggerShowLastSenders"
+			></span>
+		</div>
 	</div>
-<!-- /ko -->
+</div>
