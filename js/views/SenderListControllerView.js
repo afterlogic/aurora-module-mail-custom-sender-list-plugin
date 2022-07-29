@@ -42,11 +42,38 @@ function getCurrentSearchSender (senders)
 	return null;
 }
 
+function getSearchPeriod ()
+{
+	if (Settings.SearchPeriod === 'all') {
+		return '';
+	}
+	return Settings.SearchPeriod;
+}
+
+function getSearchFolders ()
+{
+	const inboxFolder = MailCache.folderList().inboxFolder();
+	if (!inboxFolder) {
+		return [];
+	}
+	switch (Settings.SearchFolders) {
+		case 'inbox':
+			return [inboxFolder.fullName()];
+		case 'inbox+subfolders':
+			const subfolders = inboxFolder.subfolders().map(folder => folder.fullName());
+			return [inboxFolder.fullName()].concat(subfolders);
+		default:
+			return [];
+	}
+}
+
 function CSenderListControllerView()
 {
 	this.senders = ko.observableArray([]);
-	this.sendersExpanded = ko.observable(false);
+	this.sendersExpanded = ko.observable(!!Storage.getData('sendersExpanded'));
 	this.isLoading = ko.observable(false);
+
+	this.syncedAccounts = [];
 
 	this.hideLastSenders = ko.computed(() => {
 		return Settings.NumberOfSendersToDisplay > 0
@@ -104,6 +131,7 @@ CSenderListControllerView.prototype.ViewTemplate = '%ModuleName%_SenderListContr
 CSenderListControllerView.prototype.triggerSendersExpanded = function ()
 {
 	this.sendersExpanded(!this.sendersExpanded());
+	Storage.setData('sendersExpanded', this.sendersExpanded());
 };
 
 CSenderListControllerView.prototype.triggerShowLastSenders = function ()
@@ -125,9 +153,16 @@ CSenderListControllerView.prototype.onShow = function ()
 	this.populateSenders();
 };
 
-CSenderListControllerView.prototype.populateSenders = function ()
+CSenderListControllerView.prototype.populateSenders = function (forceSync = false)
 {
 	if (!MailCache) {
+		return;
+	}
+	if (MailCache.folderList().iAccountId !== MailCache.currentAccountId()) {
+		const subscription = MailCache.folderList.subscribe(() => {
+			subscription.dispose();
+			this.populateSenders();
+		});
 		return;
 	}
 	const senders = Types.pArray(Storage.getData(`customSenderList-${MailCache.currentAccountId()}`));
@@ -139,8 +174,15 @@ CSenderListControllerView.prototype.populateSenders = function ()
 		};
 	}));
 
+	if (this.syncedAccounts.includes(MailCache.currentAccountId()) && !forceSync) {
+		return;
+	}
+	this.syncedAccounts.push(MailCache.currentAccountId());
+
 	const parameters = {
-		'AccountID': MailCache.currentAccountId()
+		AccountID: MailCache.currentAccountId(),
+		Period: getSearchPeriod(),
+		Folders: getSearchFolders()
 	};
 	this.isLoading(true);
 	Ajax.send('%ModuleName%', 'GetSenders', parameters, (response, request) => {

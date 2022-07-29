@@ -16,7 +16,7 @@ use DateTime;
 /**
  * @license https://www.gnu.org/licenses/agpl-3.0.html AGPL-3.0
  * @license https://afterlogic.com/products/common-licensing Afterlogic Software License
- * @copyright Copyright (c) 2021, Afterlogic Corp.
+ * @copyright Copyright (c) 2022, Afterlogic Corp.
  *
  * @package Modules
  */
@@ -38,6 +38,14 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 */
 	public function init()
 	{
+		\Aurora\Modules\Core\Classes\User::extend(
+			self::GetName(),
+			[
+				'NumberOfSendersToDisplay'	=> array('int', 3),
+				'SearchPeriod'				=> array('string', 'month'),
+				'SearchFolders'				=> array('string', 'inbox'),
+			]
+		);
 	}
 
 	/**
@@ -46,6 +54,37 @@ class Module extends \Aurora\System\Module\AbstractModule
 	public static function Decorator()
 	{
 		return parent::Decorator();
+	}
+
+	public function GetSettings()
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
+
+		$user = Api::getAuthenticatedUser();
+		if ($user) {
+			return [
+				'NumberOfSendersToDisplay' => $user->{self::GetName() . '::NumberOfSendersToDisplay'},
+				'SearchPeriod' => $user->{self::GetName() . '::SearchPeriod'},
+				'SearchFolders' => $user->{self::GetName() . '::SearchFolders'},
+			];
+		}
+
+		return [];
+	}
+
+	public function UpdateSettings($NumberOfSendersToDisplay, $SearchPeriod, $SearchFolders)
+	{
+		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
+
+		$user = Api::getAuthenticatedUser();
+		if ($user) {
+			$user->setExtendedProp(self::GetName() . '::NumberOfSendersToDisplay', $NumberOfSendersToDisplay);
+			$user->setExtendedProp(self::GetName() . '::SearchPeriod', $SearchPeriod);
+			$user->setExtendedProp(self::GetName() . '::SearchFolders', $SearchFolders);
+			return $user->save();
+		}
+
+		return false;
 	}
 
 	public function GetSenders($AccountID, $Folders = [], $Period = '')

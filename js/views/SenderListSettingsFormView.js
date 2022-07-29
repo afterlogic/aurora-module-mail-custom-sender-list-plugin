@@ -21,18 +21,18 @@ function CSenderListSettingsFormView()
 	CAbstractSettingsFormView.call(this, '%ModuleName%');
 
 	this.numberOfSendersToDisplay = ko.observable(Settings.NumberOfSendersToDisplay);
-	this.timeFrameValues = [
-		{ value: 0, label: TextUtils.i18n('%MODULENAME%/LABEL_TIME_RECENT') },
-		{ value: 1, label: TextUtils.i18n('%MODULENAME%/LABEL_TIME_LAST_YEAR') },
-		{ value: 2, label: TextUtils.i18n('%MODULENAME%/LABEL_TIME_ALL_TIME') }
+	this.searchPeriodValues = [
+		{ value: 'month', label: TextUtils.i18n('%MODULENAME%/LABEL_TIME_RECENT') },
+		{ value: 'year', label: TextUtils.i18n('%MODULENAME%/LABEL_TIME_LAST_YEAR') },
+		{ value: 'all', label: TextUtils.i18n('%MODULENAME%/LABEL_TIME_ALL_TIME') }
 	];
-	this.timeFrame = ko.observable(Settings.TimeFrame);
-	this.searchInValues = [
-		{ value: 0, label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_ALL_FOLDERS') },
-		{ value: 1, label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_INBOX') },
-		{ value: 2, label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_INBOX_AND_SUBFOLDERS') }
+	this.searchPeriod = ko.observable(Settings.SearchPeriod);
+	this.searchFoldersValues = [
+		{ value: 'inbox', label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_INBOX') },
+		{ value: 'inbox+subfolders', label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_INBOX_AND_SUBFOLDERS') },
+		{ value: 'all', label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_ALL_FOLDERS') }
 	];
-	this.searchIn = ko.observable(Settings.SearchIn);
+	this.searchFolders = ko.observable(Settings.SearchFolders);
 }
 
 _.extendOwn(CSenderListSettingsFormView.prototype, CAbstractSettingsFormView.prototype);
@@ -42,32 +42,31 @@ CSenderListSettingsFormView.prototype.ViewTemplate = '%ModuleName%_SenderListSet
 CSenderListSettingsFormView.prototype.getCurrentValues = function ()
 {
 	return [
-		this.numberOfSendersToDisplay(),
-		this.timeFrame(),
-		this.searchIn()
+		Types.pInt(this.numberOfSendersToDisplay()),
+		this.searchPeriod(),
+		this.searchFolders()
 	];
 };
 
 CSenderListSettingsFormView.prototype.revertGlobalValues = function ()
 {
 	this.numberOfSendersToDisplay(Settings.NumberOfSendersToDisplay);
-	this.timeFrame(Settings.TimeFrame);
-	this.searchIn(Settings.SearchIn);
+	this.searchPeriod(Settings.SearchPeriod);
+	this.searchFolders(Settings.SearchFolders);
 };
 
 CSenderListSettingsFormView.prototype.getParametersForSave = function ()
 {
-	const parameters = {
+	return {
 		'NumberOfSendersToDisplay': Types.pInt(this.numberOfSendersToDisplay()),
-		'TimeFrame': this.timeFrame(),
-		'SearchIn': this.searchIn()
+		'SearchPeriod': this.searchPeriod(),
+		'SearchFolders': this.searchFolders()
 	};
-	return parameters;
 };
 
 CSenderListSettingsFormView.prototype.applySavedValues = function (parameters)
 {
-	Settings.update(parameters.NumberOfSendersToDisplay, parameters.TimeFrame, parameters.SearchIn);
+	Settings.update(parameters.NumberOfSendersToDisplay, parameters.SearchPeriod, parameters.SearchFolders);
 };
 
 module.exports = new CSenderListSettingsFormView();

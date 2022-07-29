@@ -1,6 +1,6 @@
 <div class="item folder-level1 canSelect accordion">
 	<a class="title" href="javascript: void(0);">
-		<span class="count icon checkstate" data-bind="css: { 'process': isLoading }, click: populateSenders"></span>
+		<span class="count icon checkstate" data-bind="css: { 'process': isLoading }, click: function () { populateSenders(true); }"></span>
 		<span class="name">
 			<span class="icon senders"></span>
 			<span class="text" data-bind="i18n: {'key': '%MODULENAME%/LABEL_SENDERS'}"></span>

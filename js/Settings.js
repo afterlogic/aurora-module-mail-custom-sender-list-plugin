@@ -8,8 +8,8 @@ const
 
 module.exports = {
 	NumberOfSendersToDisplay: 3,
-	TimeFrame: 1,
-	SearchIn: 2,
+	SearchPeriod: 'month',
+	SearchFolders: 'inbox',
 
 	/**
 	 * Initializes settings from AppData object sections.
@@ -22,22 +22,22 @@ module.exports = {
 
 		if (!_.isEmpty(appDataSection)) {
 			this.NumberOfSendersToDisplay = Types.pInt(appDataSection.NumberOfSendersToDisplay, this.NumberOfSendersToDisplay);
-			this.TimeFrame = Types.pInt(appDataSection.TimeFrame, this.TimeFrame);
-			this.SearchIn = Types.pInt(appDataSection.SearchIn, this.SearchIn);
+			this.SearchPeriod = Types.pString(appDataSection.SearchPeriod, this.SearchPeriod);
+			this.SearchFolders = Types.pString(appDataSection.SearchFolders, this.SearchFolders);
 		}
 	},
-	
+
 	/**
 	 * Updates new settings values after saving on server.
 	 * 
-	 * @param {number} iNumberOfSendersToDisplay
-	 * @param {number} iTimeFrame
-	 * @param {number} iSearchIn
+	 * @param {integer} numberOfSendersToDisplay
+	 * @param {string} searchPeriod
+	 * @param {string} searchFolders
 	 */
-	update: function (iNumberOfSendersToDisplay, iTimeFrame, iSearchIn)
+	update: function (numberOfSendersToDisplay, searchPeriod, searchFolders)
 	{
-		this.NumberOfSendersToDisplay = iNumberOfSendersToDisplay;
-		this.TimeFrame = iTimeFrame;
-		this.SearchIn = iSearchIn;
+		this.NumberOfSendersToDisplay = numberOfSendersToDisplay;
+		this.SearchPeriod = searchPeriod;
+		this.SearchFolders = searchFolders;
 	}
 };

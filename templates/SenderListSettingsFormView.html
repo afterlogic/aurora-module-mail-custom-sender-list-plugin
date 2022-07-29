@@ -9,17 +9,17 @@
 				<input type="text" class="value input" data-bind="value: numberOfSendersToDisplay" style="width: 35px;" />
 			</div>
 			<div class="row">
-				<span class="label" data-bind="i18n: {'key': '%MODULENAME%/LABEL_TIME_FRAME'}"></span>
+				<span class="label" data-bind="i18n: {'key': '%MODULENAME%/LABEL_SEARCH_PERIOD'}"></span>
 				<select class="value input"
-						data-bind="options: timeFrameValues, value: timeFrame, optionsText: 'label',
-						optionsValue: 'value'" style="width: 150px;"
+						data-bind="options: searchPeriodValues, value: searchPeriod, optionsText: 'label',
+						optionsValue: 'value'" style="width: 200px;"
 				></select>
 			</div>
 			<div class="row">
 				<span class="label" data-bind="i18n: {'key': '%MODULENAME%/LABEL_SEARCH_IN'}"></span>
 				<select class="value input"
-						data-bind="options: searchInValues, value: searchIn, optionsText: 'label',
-						optionsValue: 'value'" style="width: 150px;"
+						data-bind="options: searchFoldersValues, value: searchFolders, optionsText: 'label',
+						optionsValue: 'value'" style="width: 200px;"
 				></select>
 			</div>
 		</div>
