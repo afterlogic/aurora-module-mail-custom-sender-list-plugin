@@ -38,14 +38,6 @@ class Module extends \Aurora\System\Module\AbstractModule
 	 */
 	public function init()
 	{
-		\Aurora\Modules\Core\Classes\User::extend(
-			self::GetName(),
-			[
-				'NumberOfSendersToDisplay'	=> array('int', 3),
-				'SearchPeriod'				=> array('string', 'month'),
-				'SearchFolders'				=> array('string', 'inbox'),
-			]
-		);
 	}
 
 	/**
@@ -63,9 +55,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$user = Api::getAuthenticatedUser();
 		if ($user) {
 			return [
-				'NumberOfSendersToDisplay' => $user->{self::GetName() . '::NumberOfSendersToDisplay'},
-				'SearchPeriod' => $user->{self::GetName() . '::SearchPeriod'},
-				'SearchFolders' => $user->{self::GetName() . '::SearchFolders'},
+				'NumberOfSendersToDisplay' => $user->getExtendedProp(self::GetName() . '::NumberOfSendersToDisplay', 3),
+				'SearchPeriod' => $user->getExtendedProp(self::GetName() . '::SearchPeriod', '1 month'),
+				'SearchFolders' => $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox'),
 			];
 		}
 
@@ -99,7 +91,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if (!empty($Period)) {
 			$date = new DateTime('now');
 			$toDate = $date->format('Y.m.d');
-			$date->modify('- ' . $Period);
+			$date->modify('-' . $Period);
 			$fromDate = $date->format('Y.m.d');
 
 			$sSearch = 'date:'. $fromDate . '/' . $toDate;
