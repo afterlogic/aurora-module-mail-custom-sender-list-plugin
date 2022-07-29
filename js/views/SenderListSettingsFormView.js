@@ -22,8 +22,8 @@ function CSenderListSettingsFormView()
 
 	this.numberOfSendersToDisplay = ko.observable(Settings.NumberOfSendersToDisplay);
 	this.searchPeriodValues = [
-		{ value: 'month', label: TextUtils.i18n('%MODULENAME%/LABEL_TIME_RECENT') },
-		{ value: 'year', label: TextUtils.i18n('%MODULENAME%/LABEL_TIME_LAST_YEAR') },
+		{ value: '1 month', label: TextUtils.i18n('%MODULENAME%/LABEL_TIME_RECENT') },
+		{ value: '1 year', label: TextUtils.i18n('%MODULENAME%/LABEL_TIME_LAST_YEAR') },
 		{ value: 'all', label: TextUtils.i18n('%MODULENAME%/LABEL_TIME_ALL_TIME') }
 	];
 	this.searchPeriod = ko.observable(Settings.SearchPeriod);
@@ -42,7 +42,7 @@ CSenderListSettingsFormView.prototype.ViewTemplate = '%ModuleName%_SenderListSet
 CSenderListSettingsFormView.prototype.getCurrentValues = function ()
 {
 	return [
-		Types.pInt(this.numberOfSendersToDisplay()),
+		Types.pInt(this.numberOfSendersToDisplay(), Settings.NumberOfSendersToDisplay),
 		this.searchPeriod(),
 		this.searchFolders()
 	];
@@ -58,7 +58,7 @@ CSenderListSettingsFormView.prototype.revertGlobalValues = function ()
 CSenderListSettingsFormView.prototype.getParametersForSave = function ()
 {
 	return {
-		'NumberOfSendersToDisplay': Types.pInt(this.numberOfSendersToDisplay()),
+		'NumberOfSendersToDisplay': Types.pInt(this.numberOfSendersToDisplay(), Settings.NumberOfSendersToDisplay),
 		'SearchPeriod': this.searchPeriod(),
 		'SearchFolders': this.searchFolders()
 	};
@@ -67,6 +67,7 @@ CSenderListSettingsFormView.prototype.getParametersForSave = function ()
 CSenderListSettingsFormView.prototype.applySavedValues = function (parameters)
 {
 	Settings.update(parameters.NumberOfSendersToDisplay, parameters.SearchPeriod, parameters.SearchFolders);
+	this.numberOfSendersToDisplay(parameters.NumberOfSendersToDisplay);
 };
 
 module.exports = new CSenderListSettingsFormView();

@@ -8,6 +8,7 @@ const
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 
 	Ajax = require('%PathToCoreWebclientModule%/js/Ajax.js'),
+	App = require('%PathToCoreWebclientModule%/js/App.js'),
 	ModulesManager = require('%PathToCoreWebclientModule%/js/ModulesManager.js'),
 	Storage = require('%PathToCoreWebclientModule%/js/Storage.js'),
 
@@ -118,12 +119,24 @@ function CSenderListControllerView()
 					this.setLastSendersMaxHeight();
 					this.showLastSenders(true);
 				}
+				if (this.messageListView && this.messageListView.bAdvancedSearch()) {
+					this.messageListView.bAdvancedSearch(false);
+				}
+				$('.MailLayout .search_block .control').hide();
+			} else {
+				$('.MailLayout .search_block .control').show();
 			}
 		});
 		MailCache.currentAccountId.subscribe(() => {
 			this.populateSenders();
 		});
 	}
+
+	App.subscribeEvent('MailWebclient::ConstructView::after', params => {
+		if ('CMessageListView' === params.Name) {
+			this.messageListView = params.View;
+		}
+	});
 }
 
 CSenderListControllerView.prototype.ViewTemplate = '%ModuleName%_SenderListControllerView';
@@ -174,6 +187,14 @@ CSenderListControllerView.prototype.populateSenders = function (forceSync = fals
 		};
 	}));
 
+	const currentSettings = {
+		SearchPeriod: Settings.SearchPeriod,
+		SearchFolders: Settings.SearchFolders
+	};
+	if (JSON.stringify(currentSettings) !== JSON.stringify(this.savedCurrentSettings)) {
+		this.syncedAccounts = [];
+		this.savedCurrentSettings = currentSettings;
+	}
 	if (this.syncedAccounts.includes(MailCache.currentAccountId()) && !forceSync) {
 		return;
 	}

@@ -8,7 +8,7 @@ const
 
 module.exports = {
 	NumberOfSendersToDisplay: 3,
-	SearchPeriod: 'month',
+	SearchPeriod: '1 month',
 	SearchFolders: 'inbox',
 
 	/**
