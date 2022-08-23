@@ -37,7 +37,7 @@ function getCurrentSearchSender (senders)
 		uidList.sortOrder() === MailSettings.MessagesSortBy.DefaultSortOrder
 	) {
 		return senders.find(sender => {
-			return search === `from:${sender.email} folders:all`;
+			return search === `from:${sender.email}${getSearchFoldersString()}`;
 		}) || null;
 	}
 	return null;
@@ -51,7 +51,7 @@ function getSearchPeriod ()
 	return Settings.SearchPeriod;
 }
 
-function getSearchFolders ()
+function getSearchFoldersArray ()
 {
 	const inboxFolder = MailCache.folderList().inboxFolder();
 	if (!inboxFolder) {
@@ -65,6 +65,22 @@ function getSearchFolders ()
 			return [inboxFolder.fullName()].concat(subfolders);
 		default:
 			return [];
+	}
+}
+
+function getSearchFoldersString ()
+{
+	const inboxFolder = MailCache.folderList().inboxFolder();
+	if (!inboxFolder) {
+		return [];
+	}
+	switch (Settings.SearchFolders) {
+		case 'inbox':
+			return '';
+		case 'inbox+subfolders':
+			return ' folders:sub';
+		default:
+			return ' folders:all';
 	}
 }
 
@@ -203,7 +219,7 @@ CSenderListControllerView.prototype.populateSenders = function (forceSync = fals
 	const parameters = {
 		AccountID: MailCache.currentAccountId(),
 		Period: getSearchPeriod(),
-		Folders: getSearchFolders()
+		Folders: getSearchFoldersArray()
 	};
 	this.isLoading(true);
 	Ajax.send('%ModuleName%', 'GetSenders', parameters, (response, request) => {
@@ -223,7 +239,7 @@ CSenderListControllerView.prototype.populateSenders = function (forceSync = fals
 CSenderListControllerView.prototype.searchMessagesForSender = function (email)
 {
 	const searchMessagesInInbox = ModulesManager.run('MailWebclient', 'getSearchMessagesInInbox');
-	searchMessagesInInbox(`from:${email} folders:all`);
+	searchMessagesInInbox(`from:${email}${getSearchFoldersString()}`);
 };
 
 module.exports = new CSenderListControllerView();
