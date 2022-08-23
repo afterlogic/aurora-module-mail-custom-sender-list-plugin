@@ -7,7 +7,6 @@ const
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 
-	Ajax = require('%PathToCoreWebclientModule%/js/Ajax.js'),
 	App = require('%PathToCoreWebclientModule%/js/App.js'),
 	ModulesManager = require('%PathToCoreWebclientModule%/js/ModulesManager.js'),
 	Storage = require('%PathToCoreWebclientModule%/js/Storage.js'),
@@ -15,6 +14,7 @@ const
 	MailCache = ModulesManager.run('MailWebclient', 'getMailCache'),
 	MailSettings = require('modules/MailWebclient/js/Settings.js'),
 
+	SendersUtils = require('modules/%ModuleName%/js/utils/senders.js'),
 	Settings = require('modules/%ModuleName%/js/Settings.js')
 ;
 
@@ -43,31 +43,6 @@ function getCurrentSearchSender (senders)
 	return null;
 }
 
-function getSearchPeriod ()
-{
-	if (Settings.SearchPeriod === 'all') {
-		return '';
-	}
-	return Settings.SearchPeriod;
-}
-
-function getSearchFoldersArray ()
-{
-	const inboxFolder = MailCache.folderList().inboxFolder();
-	if (!inboxFolder) {
-		return [];
-	}
-	switch (Settings.SearchFolders) {
-		case 'inbox':
-			return [inboxFolder.fullName()];
-		case 'inbox+subfolders':
-			const subfolders = inboxFolder.subfolders().map(folder => folder.fullName());
-			return [inboxFolder.fullName()].concat(subfolders);
-		default:
-			return [];
-	}
-}
-
 function getSearchFoldersString ()
 {
 	const inboxFolder = MailCache.folderList().inboxFolder();
@@ -87,6 +62,9 @@ function getSearchFoldersString ()
 function CSenderListControllerView()
 {
 	this.senders = ko.observableArray([]);
+	this.senders.subscribe(function () {
+		console.log('this.senders', this.senders());
+	}, this);
 	this.sendersExpanded = ko.observable(!!Storage.getData('sendersExpanded'));
 	this.isLoading = ko.observable(false);
 
@@ -182,7 +160,7 @@ CSenderListControllerView.prototype.onShow = function ()
 	this.populateSenders();
 };
 
-CSenderListControllerView.prototype.populateSenders = function (forceSync = false)
+CSenderListControllerView.prototype.populateSenders = async function (forceSync = false)
 {
 	if (!MailCache) {
 		return;
@@ -194,46 +172,14 @@ CSenderListControllerView.prototype.populateSenders = function (forceSync = fals
 		});
 		return;
 	}
-	const senders = Types.pArray(Storage.getData(`customSenderList-${MailCache.currentAccountId()}`));
-	this.senders(senders.map(sender => {
-		return {
-			email: sender.email,
-			count: sender.count,
-			selected: ko.observable(false)
-		};
-	}));
 
-	const currentSettings = {
-		SearchPeriod: Settings.SearchPeriod,
-		SearchFolders: Settings.SearchFolders
-	};
-	if (JSON.stringify(currentSettings) !== JSON.stringify(this.savedCurrentSettings)) {
-		this.syncedAccounts = [];
-		this.savedCurrentSettings = currentSettings;
-	}
-	if (this.syncedAccounts.includes(MailCache.currentAccountId()) && !forceSync) {
-		return;
-	}
-	this.syncedAccounts.push(MailCache.currentAccountId());
+	this.senders(SendersUtils.getFromStorage());
 
-	const parameters = {
-		AccountID: MailCache.currentAccountId(),
-		Period: getSearchPeriod(),
-		Folders: getSearchFoldersArray()
-	};
-	this.isLoading(true);
-	Ajax.send('%ModuleName%', 'GetSenders', parameters, (response, request) => {
+	if (SendersUtils.needToSync()) {
+		this.isLoading(true);
+		this.senders(await SendersUtils.getFromServer(forceSync));
 		this.isLoading(false);
-		if (response && response.Result) {
-			const senders = Object.keys(response.Result).map(function(email) {
-				const count = response.Result[email];
-				return { email, count, selected: ko.observable(false) };
-			});
-			senders.sort((a, b) => b.count - a.count);
-			this.senders(senders);
-			Storage.setData(`customSenderList-${parameters.AccountID}`, senders);
-		}
-	});
+	}
 };
 
 CSenderListControllerView.prototype.searchMessagesForSender = function (email)

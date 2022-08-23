@@ -13,14 +13,14 @@
 	<div class="children" data-bind="visible: sendersExpanded">
 		<!-- ko foreach: firstSenders -->
 			<div class="item folder-level2 canSelect"
-				 data-bind="click: function () { $parent.searchMessagesForSender(email); },
+				 data-bind="click: function () { $parent.searchMessagesForSender(value); },
 				 css: { 'selected': selected }"
 			>
 				<span class="title">
 					<span class="count total" data-bind="text: count"></span>
 					<span class="name">
 						<span class="icon type10"></span>
-						<span class="text" data-bind="text: email"></span>
+						<span class="text" data-bind="text: label"></span>
 					</span>
 				</span>
 			</div>
@@ -32,14 +32,14 @@
 			<div>
 				<!-- ko foreach: lastSenders -->
 				<div class="item folder-level2 canSelect"
-					 data-bind="click: function () { $parent.searchMessagesForSender(email); },
+					 data-bind="click: function () { $parent.searchMessagesForSender(value); },
 					 css: { 'selected': selected }"
 				>
 					<span class="title">
 						<span class="count total" data-bind="text: count"></span>
 						<span class="name">
 							<span class="icon type10"></span>
-							<span class="text" data-bind="text: email"></span>
+							<span class="text" data-bind="text: label"></span>
 						</span>
 					</span>
 				</div>
