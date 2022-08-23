@@ -230,7 +230,7 @@ CSenderListControllerView.prototype.populateSenders = function (forceSync = fals
 				return { email, count, selected: ko.observable(false) };
 			});
 			senders.sort((a, b) => b.count - a.count);
-			this.senders(senders.slice(0, 20));
+			this.senders(senders);
 			Storage.setData(`customSenderList-${parameters.AccountID}`, senders);
 		}
 	});
