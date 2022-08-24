@@ -55,6 +55,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$user = Api::getAuthenticatedUser();
 		if ($user) {
 			return [
+				'SenderFolderMinMessagesCount' => $this->getConfig('SenderFolderMinMessagesCount', 2),
 				'NumberOfSendersToDisplay' => $user->getExtendedProp(self::GetName() . '::NumberOfSendersToDisplay', 3),
 				'SearchPeriod' => $user->getExtendedProp(self::GetName() . '::SearchPeriod', '1 month'),
 				'SearchFolders' => $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox'),

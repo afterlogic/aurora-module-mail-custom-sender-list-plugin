@@ -7,6 +7,7 @@ const
 ;
 
 module.exports = {
+	SenderFolderMinMessagesCount: 2,
 	NumberOfSendersToDisplay: 3,
 	SearchPeriod: '1 month',
 	SearchFolders: 'inbox',
@@ -21,6 +22,7 @@ module.exports = {
 		const appDataSection = appData['%ModuleName%'];
 
 		if (!_.isEmpty(appDataSection)) {
+			this.SenderFolderMinMessagesCount = Types.pInt(appDataSection.SenderFolderMinMessagesCount, this.SenderFolderMinMessagesCount);
 			this.NumberOfSendersToDisplay = Types.pInt(appDataSection.NumberOfSendersToDisplay, this.NumberOfSendersToDisplay);
 			this.SearchPeriod = Types.pString(appDataSection.SearchPeriod, this.SearchPeriod);
 			this.SearchFolders = Types.pString(appDataSection.SearchFolders, this.SearchFolders);

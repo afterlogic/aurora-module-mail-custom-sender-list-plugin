@@ -1,11 +1,7 @@
 'use strict';
 
 const
-	_ = require('underscore'),
 	ko = require('knockout'),
-
-	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
-	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 
 	App = require('%PathToCoreWebclientModule%/js/App.js'),
 	ModulesManager = require('%PathToCoreWebclientModule%/js/ModulesManager.js'),
@@ -37,7 +33,7 @@ function getCurrentSearchSender (senders)
 		uidList.sortOrder() === MailSettings.MessagesSortBy.DefaultSortOrder
 	) {
 		return senders.find(sender => {
-			return search === `from:${sender.email}${getSearchFoldersString()}`;
+			return search === `from:${sender.value}${getSearchFoldersString()}`;
 		}) || null;
 	}
 	return null;
@@ -62,13 +58,8 @@ function getSearchFoldersString ()
 function CSenderListControllerView()
 {
 	this.senders = ko.observableArray([]);
-	this.senders.subscribe(function () {
-		console.log('this.senders', this.senders());
-	}, this);
 	this.sendersExpanded = ko.observable(!!Storage.getData('sendersExpanded'));
 	this.isLoading = ko.observable(false);
-
-	this.syncedAccounts = [];
 
 	this.hideLastSenders = ko.computed(() => {
 		return Settings.NumberOfSendersToDisplay > 0
@@ -109,7 +100,7 @@ function CSenderListControllerView()
 				sender.selected(true);
 				this.selectedSender = sender;
 				this.sendersExpanded(true);
-				if (this.lastSenders().find(lastSender => lastSender.email === sender.email)) {
+				if (this.lastSenders().find(lastSender => lastSender.value === sender.value)) {
 					this.setLastSendersMaxHeight();
 					this.showLastSenders(true);
 				}
@@ -175,9 +166,9 @@ CSenderListControllerView.prototype.populateSenders = async function (forceSync 
 
 	this.senders(SendersUtils.getFromStorage());
 
-	if (SendersUtils.needToSync()) {
+	if (SendersUtils.needToSync(forceSync)) {
 		this.isLoading(true);
-		this.senders(await SendersUtils.getFromServer(forceSync));
+		this.senders(await SendersUtils.getFromServer());
 		this.isLoading(false);
 	}
 };

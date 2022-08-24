@@ -3,6 +3,7 @@
 const
 	ko = require('knockout'),
 
+	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 
 	Ajax = require('%PathToCoreWebclientModule%/js/Ajax.js'),
@@ -41,21 +42,23 @@ function getSearchFoldersArray ()
 
 function prepareSenders(senders) {
 	const mainSenders = senders
-			.filter(sender => sender.count >= 2)
+			.filter(sender => sender.count >= Settings.SenderFolderMinMessagesCount)
 			.map(sender => ({
 				label: sender.email,
 				value: sender.email,
 				count: sender.count,
 				selected: ko.observable(false)
-			}))
-	;
-	const restSenders = senders.filter(sender => sender.count < 2);
-	const restSendersEmail = restSenders.map(sender => sender.email).join(',');
+			}));
+	const restSenders = senders
+			.filter(sender => sender.count < Settings.SenderFolderMinMessagesCount);
+	const restSendersEmail = restSenders
+			.map(sender => sender.email)
+			.join(',');
 	const restSendersCount = restSenders
 			.map(sender => sender.count)
 			.reduce((accumulator, count) => accumulator + count, 0);
 	mainSenders.push({
-		label: 'Rest mails',
+		label: TextUtils.i18n('%MODULENAME%/LABEL_REST_MAILS'),
 		value: restSendersEmail,
 		count: restSendersCount,
 		selected: ko.observable(false)
@@ -71,7 +74,7 @@ function getFromStorage() {
 let syncedAccounts = [];
 let savedCurrentSettings = {};
 
-function needToSync() {
+function needToSync(forceSync) {
 	const currentSettings = {
 		SearchPeriod: Settings.SearchPeriod,
 		SearchFolders: Settings.SearchFolders
@@ -103,6 +106,8 @@ function getFromServer() {
 				senders.sort((a, b) => b.count - a.count);
 				Storage.setData(`customSenderList-${parameters.AccountID}`, senders);
 				resolve(prepareSenders(senders));
+			} else {
+				resolve(getFromStorage(senders));
 			}
 		});
 	});

@@ -6,5 +6,13 @@
 	"Disabled_Description": [
 		"Setting to true disables the module",
 		"string"
+	],
+	"SenderFolderMinMessagesCount": [
+		2,
+		"int"
+	],
+	"SenderFolderMinMessagesCount_Description": [
+		"If sender has sent less messages than this number their messages will appear in the 'Rest mail' virtual folder",
+		"string"
 	]
 }
