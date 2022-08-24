@@ -151,7 +151,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $aFolders;
 	}
 
-	public function GetMessages($AccountID, $Senders, $Folder = '', $Offset = 0, $Limit = 20, $Search = '', $Filters = '', $UseThreading = false, $InboxUidnext = '', $SortBy = null, $SortOrder = null)
+	public function GetMessages($AccountID, $Senders, $Period = '', $Folder = '', $Offset = 0, $Limit = 20, $Search = '', $Filters = '', $UseThreading = false, $InboxUidnext = '', $SortBy = null, $SortOrder = null)
 	{
 		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
@@ -166,6 +166,15 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$aFilters = \array_filter(\explode(',', $sFilters), function ($sValue) {
 				return '' !== trim($sValue);
 			});
+		}
+
+		if (!empty($Period)) {
+			$date = new DateTime('now');
+			$toDate = $date->format('Y.m.d');
+			$date->modify('-' . $Period);
+			$fromDate = $date->format('Y.m.d');
+
+			$sSearch = $sSearch . ' date:'. $fromDate . '/' . $toDate;
 		}
 
 		$iOffset = (int) $Offset;
