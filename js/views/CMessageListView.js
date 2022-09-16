@@ -315,7 +315,7 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 				sSearch = ' ' + sSearch;
 			}
 			sSearch = 'sender:' + this.currentSender() + sSearch;
-			this.changeRoutingForMessageList('__senders__', iPage, sUid, sSearch, this.filters(), this.sSortBy, this.iSortOrder);
+			this.changeRoutingForMessageList(Settings.SendersFolder, iPage, sUid, sSearch, this.filters(), this.sSortBy, this.iSortOrder);
 		}
 	}, this);
 	this.currentPage = ko.observable(0);
@@ -772,7 +772,7 @@ CMessageListView.prototype.onSearchClick = function ()
 		sSearch = ' ' + sSearch;
 	}
 	sSearch = 'sender:' + this.currentSender() + sSearch;
-	this.changeRoutingForMessageList('__senders__', iPage, '', sSearch, this.filters());
+	this.changeRoutingForMessageList(Settings.SendersFolder, iPage, '', sSearch, this.filters());
 };
 
 CMessageListView.prototype.onRetryClick = function ()
@@ -850,7 +850,7 @@ CMessageListView.prototype.routeForMessage = function (oMessage)
 					sSearch = ' ' + sSearch;
 				}
 				sSearch = 'sender:' + this.currentSender() + sSearch;
-				this.changeRoutingForMessageList('__senders__', iPage, sUid, sSearch, this.filters(), this.sSortBy, this.iSortOrder);
+				this.changeRoutingForMessageList(Settings.SendersFolder, iPage, sUid, sSearch, this.filters(), this.sSortBy, this.iSortOrder);
 				if (App.isMobile() && MailCache.currentMessage() && sUid === MailCache.currentMessage().longUid())
 				{
 					MailCache.currentMessage.valueHasMutated();
