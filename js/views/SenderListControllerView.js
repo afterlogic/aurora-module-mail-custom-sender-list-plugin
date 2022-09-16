@@ -80,7 +80,7 @@ function CSenderListControllerView()
 
 			const sender = this.getCurrentSearchSender();
 			if (sender) {
-				const inboxFolder = MailCache.folderList().currentFolder().selected(false);
+				const inboxFolder = MailCache.folderList().currentFolder();
 	
 				if (inboxFolder) {
 					inboxFolder.selected(false);

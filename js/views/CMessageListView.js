@@ -4,11 +4,12 @@ var
 	_ = require('underscore'),
 	$ = require('jquery'),
 	ko = require('knockout'),
-	
+
 	DateUtils = require('%PathToCoreWebclientModule%/js/utils/Date.js'),
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
-	
+
+	Ajax = require('%PathToCoreWebclientModule%/js/Ajax.js'),
 	Api = require('%PathToCoreWebclientModule%/js/Api.js'),
 	App = require('%PathToCoreWebclientModule%/js/App.js'),
 	Browser = require('%PathToCoreWebclientModule%/js/Browser.js'),
@@ -17,18 +18,20 @@ var
 	ModulesManager = require('%PathToCoreWebclientModule%/js/ModulesManager.js'),
 	Routing = require('%PathToCoreWebclientModule%/js/Routing.js'),
 	Screens = require('%PathToCoreWebclientModule%/js/Screens.js'),
-	
+
 	CPageSwitcherView = require('%PathToCoreWebclientModule%/js/views/CPageSwitcherView.js'),
-	
+
 	ComposeUtils = require('modules/MailWebclient/js/utils/Compose.js'),
 	LinksUtils = require('modules/MailWebclient/js/utils/Links.js'),
 	MailUtils = require('modules/MailWebclient/js/utils/Mail.js'),
-	
+
 	AccountList = require('modules/MailWebclient/js/AccountList.js'),
 	MailCache  = require('modules/MailWebclient/js/Cache.js'),
 	MailSettings = require('modules/MailWebclient/js/Settings.js'),
 	Settings  = require('modules/%ModuleName%/js/Settings.js'),
-	Ajax = require('%PathToCoreWebclientModule%/js/Ajax.js'),
+
+	MailCache = require('modules/MailWebclient/js/Cache.js'),
+	MessagesDictionary = require('modules/MailWebclient/js/MessagesDictionary.js'),
 	CMessageModel = require('modules/MailWebclient/js/models/CMessageModel.js')
 ;
 
@@ -91,10 +94,6 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 	}, this);
 
 	this.currentMessage = MailCache.currentMessage;
-	this.currentMessage.subscribe(function () {
-		this.isFocused(false);
-		this.selector.itemSelected(this.currentMessage());
-	}, this);
 
 	this.folderList = MailCache.folderList;
 	this.folderList.subscribe(function () {
@@ -128,8 +127,8 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 		return oAccount && oAccount.threadingIsAvailable() && !bFolderWithoutThreads && bNotSearchOrFilters;
 	}, this);
 
-	this.collection = ko.observableArray([]);
-	
+	this.collection = MailCache.messages;
+
 	this._search = ko.observable('');
 	this.search = ko.computed({
 		'read': function () {
@@ -269,6 +268,13 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 		false,
 		false // don't select new item before routing executed
 	);
+
+	ko.computed(function () {
+		this.isFocused(false);
+		const currentMessageLongUid = this.currentMessage() ? this.currentMessage().longUid() : '';
+		const currentMessageListItem = this.collection().find(message => message.longUid() === currentMessageLongUid) || null;
+		this.selector.itemSelected(currentMessageListItem);
+	}, this);
 
 	this.checkedUids = ko.computed(function () {
 		var
@@ -522,33 +528,40 @@ CMessageListView.prototype.onHide = function (aParams)
 };
 
 /**
+ * @param {array} params
+ */
+CMessageListView.prototype.parseRouteParams = function (params)
+{
+	const parsedParams = LinksUtils.parseMailbox(params);
+	let searchParts = parsedParams.Search.split(' ');
+	const senderSearchPart = searchParts.find(part => part.substr(0, 7) === 'sender:');
+	if (senderSearchPart) {
+		searchParts = searchParts.filter(part => {
+			return part !== senderSearchPart;
+		});
+		parsedParams.Search = searchParts.join(' ');
+		parsedParams.CurrentSender = senderSearchPart.substr(7);
+	} else {
+		parsedParams.CurrentSender = '';
+	}
+	return parsedParams;
+};
+
+/**
  * @param {Array} aParams
  */
 CMessageListView.prototype.onRoute = function (aParams)
 {
 	var
-		oParams = LinksUtils.parseMailbox(aParams),
+		oParams = this.parseRouteParams(aParams),
 		sCurrentFolder = this.folderFullName() || this.folderList().inboxFolderFullName(),
 		bRouteChanged = this.currentPage() !== oParams.Page ||
 			sCurrentFolder !== oParams.Folder ||
 			this.filters() !== oParams.Filters || (oParams.Filters === Enums.FolderFilter.Unseen && MailCache.waitForUnseenMessages()) ||
 			this.search() !== oParams.Search || this.sSortBy !== oParams.SortBy || this.iSortOrder !== oParams.SortOrder,
-		bMailsPerPageChanged = MailSettings.MailsPerPage !== this.oPageSwitcher.perPage(),
-		aSearchParts = oParams.Search.split(' ')
+		bMailsPerPageChanged = MailSettings.MailsPerPage !== this.oPageSwitcher.perPage()
 	;
-
-	_.each(aSearchParts, function(item) {
-		if (item.substr(0, 7) === 'sender:') {
-			this.currentSender(item.substr(7));
-		}
-	}, this);
-
-	aSearchParts = aSearchParts.filter(function (item) {
-		return item.substr(0, 7) !== 'sender:';
-	});
-
-	oParams.Search = aSearchParts.join(' ');
-
+	this.currentSender(oParams.CurrentSender);
 	this.pageSwitcherLocked(true);
 	if (sCurrentFolder !== oParams.Folder || this.search() !== oParams.Search || this.filters() !== oParams.Filters)
 	{
@@ -681,12 +694,13 @@ CMessageListView.prototype.requestMessageList = function ()
 	 if (oResult !== false && oResult['@Object'] === 'Collection/MessageCollection')
 	 {
 		 this.oPageSwitcher.setCount(oResult.MessageResultCount);
-
-		 this.collection(_.map(oResult['@Collection'], function (oRawMessage) {
-			var oMessage = new CMessageModel();
-			oMessage.parse(oRawMessage, MailCache.iAccountId, false, bTrustThreadInfo);
-			return oMessage;
-		 }, this));
+		 const messages = oResult['@Collection'].map(messageData => {
+			const message = new CMessageModel();
+			message.parse(messageData, MailCache.iAccountId, false, bTrustThreadInfo);
+			MessagesDictionary.set([message.accountId(), message.folder(), message.uid()], message);
+			return message;
+		 });
+		 MailCache.messages(messages);
 
 		 this.isLoading(false);
 	 }
