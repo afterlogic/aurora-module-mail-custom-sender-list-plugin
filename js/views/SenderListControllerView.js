@@ -8,16 +8,17 @@ const
 
 	App = require('%PathToCoreWebclientModule%/js/App.js'),
 	ModulesManager = require('%PathToCoreWebclientModule%/js/ModulesManager.js'),
+	Routing = require('%PathToCoreWebclientModule%/js/Routing.js'),
 	Storage = require('%PathToCoreWebclientModule%/js/Storage.js'),
 
 	MailCache = ModulesManager.run('MailWebclient', 'getMailCache'),
 	MailSettings = require('modules/MailWebclient/js/Settings.js'),
 
+	LinksUtils = require('modules/%ModuleName%/js/utils/Links.js'),
+
+	CMessageListView = require('modules/%ModuleName%/js/views/CMessageListView.js'),
 	SendersUtils = require('modules/%ModuleName%/js/utils/senders.js'),
-	Settings = require('modules/%ModuleName%/js/Settings.js'),
-	Routing = require('%PathToCoreWebclientModule%/js/Routing.js'),
-	LinksUtils = require('modules/MailWebclient/js/utils/Links.js'),
-	CMessageListView = require('modules/%ModuleName%/js/views/CMessageListView.js')
+	Settings = require('modules/%ModuleName%/js/Settings.js')
 ;
 
 function getSearchFoldersString ()
@@ -78,7 +79,7 @@ function CSenderListControllerView()
 				this.selectedSender = null;
 			}
 
-			const sender = this.getCurrentSearchSender();
+			const sender = this.senders().find(sender => this.currentSender() === sender.value);
 			if (sender) {
 				const inboxFolder = MailCache.folderList().currentFolder();
 	
@@ -93,7 +94,7 @@ function CSenderListControllerView()
 					this.showLastSenders(true);
 				}
 			}
-		})
+		});
 		MailCache.currentAccountId.subscribe(() => {
 			this.populateSenders();
 		});
@@ -131,13 +132,6 @@ CSenderListControllerView.prototype.setLastSendersMaxHeight = function ()
 	}
 };
 
-CSenderListControllerView.prototype.getCurrentSearchSender = function ()
-{
-	return this.senders().find(sender => {
-		return this.currentSender() === sender.value;
-	}) || null;
-}
-
 CSenderListControllerView.prototype.onShow = function ()
 {
 	this.setLastSendersMaxHeight();
@@ -146,18 +140,15 @@ CSenderListControllerView.prototype.onShow = function ()
 
 CSenderListControllerView.prototype.onRoute = function (aParams)
 {
-	if (this.mailView && aParams[1] && aParams[1] === Settings.SendersFolder) {
-		var
-			oParams = LinksUtils.parseMailbox(aParams),
-			aSearchParts = oParams.Search.split(' ')
-		;
-		_.each(aSearchParts, function(item) {
-			if (item.substr(0, 7) === 'sender:') {
-				this.currentSender(item.substr(7));
-			}
-		}, this);
+	if (!this.mailView) {
+		return;
+	}
+	const parsedParams = LinksUtils.parseMailbox(aParams);
+	if (parsedParams.Folder === Settings.SendersFolder) {
+		this.currentSender(parsedParams.CurrentSender);
 		this.mailView.setCustomMessageList('%ModuleName%', this.messageList);
 	} else {
+		this.currentSender('');
 		this.mailView.removeCustomMessageList('%ModuleName%', this.messageList);
 	}
 };

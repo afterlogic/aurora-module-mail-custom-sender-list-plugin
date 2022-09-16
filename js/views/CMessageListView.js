@@ -22,7 +22,6 @@ var
 	CPageSwitcherView = require('%PathToCoreWebclientModule%/js/views/CPageSwitcherView.js'),
 
 	ComposeUtils = require('modules/MailWebclient/js/utils/Compose.js'),
-	LinksUtils = require('modules/MailWebclient/js/utils/Links.js'),
 	MailUtils = require('modules/MailWebclient/js/utils/Mail.js'),
 
 	AccountList = require('modules/MailWebclient/js/AccountList.js'),
@@ -32,7 +31,9 @@ var
 
 	MailCache = require('modules/MailWebclient/js/Cache.js'),
 	MessagesDictionary = require('modules/MailWebclient/js/MessagesDictionary.js'),
-	CMessageModel = require('modules/MailWebclient/js/models/CMessageModel.js')
+	CMessageModel = require('modules/MailWebclient/js/models/CMessageModel.js'),
+
+	LinksUtils = require('modules/%ModuleName%/js/utils/Links.js')
 ;
 
 require("jquery-ui/ui/widgets/datepicker");
@@ -528,32 +529,12 @@ CMessageListView.prototype.onHide = function (aParams)
 };
 
 /**
- * @param {array} params
- */
-CMessageListView.prototype.parseRouteParams = function (params)
-{
-	const parsedParams = LinksUtils.parseMailbox(params);
-	let searchParts = parsedParams.Search.split(' ');
-	const senderSearchPart = searchParts.find(part => part.substr(0, 7) === 'sender:');
-	if (senderSearchPart) {
-		searchParts = searchParts.filter(part => {
-			return part !== senderSearchPart;
-		});
-		parsedParams.Search = searchParts.join(' ');
-		parsedParams.CurrentSender = senderSearchPart.substr(7);
-	} else {
-		parsedParams.CurrentSender = '';
-	}
-	return parsedParams;
-};
-
-/**
  * @param {Array} aParams
  */
 CMessageListView.prototype.onRoute = function (aParams)
 {
 	var
-		oParams = this.parseRouteParams(aParams),
+		oParams = LinksUtils.parseMailbox(aParams),
 		sCurrentFolder = this.folderFullName() || this.folderList().inboxFolderFullName(),
 		bRouteChanged = this.currentPage() !== oParams.Page ||
 			sCurrentFolder !== oParams.Folder ||
