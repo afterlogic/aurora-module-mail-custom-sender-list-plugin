@@ -71,6 +71,29 @@ function CSenderListControllerView()
 
 	if (MailCache) {
 		this.selectedSender = null;
+	
+		ko.computed(() => {
+			if (this.selectedSender) {
+				this.selectedSender.selected(false);
+				this.selectedSender = null;
+			}
+
+			const sender = this.getCurrentSearchSender();
+			if (sender) {
+				const inboxFolder = MailCache.folderList().currentFolder().selected(false);
+	
+				if (inboxFolder) {
+					inboxFolder.selected(false);
+				}
+				sender.selected(true);
+				this.selectedSender = sender;
+				this.sendersExpanded(true);
+				if (this.lastSenders().find(lastSender => lastSender.value === sender.value)) {
+					this.setLastSendersMaxHeight();
+					this.showLastSenders(true);
+				}
+			}
+		})
 		MailCache.currentAccountId.subscribe(() => {
 			this.populateSenders();
 		});
@@ -123,11 +146,7 @@ CSenderListControllerView.prototype.onShow = function ()
 
 CSenderListControllerView.prototype.onRoute = function (aParams)
 {
-	if (this.selectedSender) {
-		this.selectedSender.selected(false);
-		this.selectedSender = null;
-	}
-	if (this.mailView && aParams[1] && aParams[1] === '__senders__') {
+	if (this.mailView && aParams[1] && aParams[1] === Settings.SendersFolder) {
 		var
 			oParams = LinksUtils.parseMailbox(aParams),
 			aSearchParts = oParams.Search.split(' ')
@@ -137,21 +156,6 @@ CSenderListControllerView.prototype.onRoute = function (aParams)
 				this.currentSender(item.substr(7));
 			}
 		}, this);
-		const sender = this.getCurrentSearchSender();
-		if (sender) {
-			const inboxFolder = MailCache.folderList().inboxFolder();
-			console.log(inboxFolder);
-			if (inboxFolder) {
-				inboxFolder.selected(false);
-			}
-			sender.selected(true);
-			this.selectedSender = sender;
-			this.sendersExpanded(true);
-			if (this.lastSenders().find(lastSender => lastSender.value === sender.value)) {
-				this.setLastSendersMaxHeight();
-				this.showLastSenders(true);
-			}
-		}
 		this.mailView.setCustomMessageList('%ModuleName%', this.messageList);
 	} else {
 		this.mailView.removeCustomMessageList('%ModuleName%', this.messageList);
@@ -190,7 +194,7 @@ CSenderListControllerView.prototype.searchMessagesForSender = function (email)
 	Routing.replaceHash([
 		'mail', 
 		sAccountHash, 
-		'__senders__', 
+		Settings.SendersFolder, 
 		'sender:' + email
 	]);
 };
