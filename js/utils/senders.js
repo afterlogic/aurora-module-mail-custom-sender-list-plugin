@@ -107,7 +107,7 @@ function getFromServer() {
 				Storage.setData(`customSenderList-${parameters.AccountID}`, senders);
 				resolve(prepareSenders(senders));
 			} else {
-				resolve(getFromStorage(senders));
+				resolve(getFromStorage());
 			}
 		});
 	});

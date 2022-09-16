@@ -11,6 +11,7 @@ module.exports = {
 	NumberOfSendersToDisplay: 3,
 	SearchPeriod: '1 month',
 	SearchFolders: 'inbox',
+	ServerModuleName: '%ModuleName%',
 
 	/**
 	 * Initializes settings from AppData object sections.

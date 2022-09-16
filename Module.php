@@ -151,13 +151,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $aFolders;
 	}
 
-	public function GetMessages($AccountID, $Senders, $Period = '', $Folder = '', $Offset = 0, $Limit = 20, $Search = '', $Filters = '', $UseThreading = false, $InboxUidnext = '', $SortBy = null, $SortOrder = null)
+	public function GetMessages($AccountID, $Senders, $Period = '', $Folder = 'INBOX', $Offset = 0, $Limit = 20, $Search = '', $Filters = '', $UseThreading = false, $InboxUidnext = '', $SortBy = null, $SortOrder = null)
 	{
 		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
 		$sSearch = \trim((string) $Search);
 		if (is_array($Senders) && count($Senders) > 0) {
-			$Search = $sSearch . ' from:' . implode(',', $Senders);
+			$sSearch = \trim($sSearch . ' from:' . implode(',', $Senders));
 		}
 
 		$aFilters = [];
@@ -215,10 +215,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 			function ($oMailModule) use ($oAccount, $Folder, $Search, $sSearch) { 
 				return $oMailModule->getFoldersForSearch($oAccount, $Folder, $Search, $sSearch);
 			}, null, MailModule::class
-		);
+		)($MailModule);
 
-//		$aFolderObjects = $this->getFoldersForSearch($oAccount, $Folder, $Search, $sSearch, $this->aSystemFoldersToExclude);
-
+		$aFolders = [];
 		foreach ($aFolderObjects as $oFolder) {
 			if (!in_array($oFolder->getType(), $this->aSystemFoldersToExclude)) {
 				$aFolders[] = $oFolder->getRawFullName();
