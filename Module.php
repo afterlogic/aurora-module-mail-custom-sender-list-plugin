@@ -151,13 +151,31 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $aFolders;
 	}
 
+	protected function getSearchFoldersString()
+	{
+		$user = Api::getAuthenticatedUser();
+		if ($user) {
+			$sSearchFolders = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
+			switch ($sSearchFolders) {
+				case 'inbox':
+					return '';
+				case 'inbox+subfolders':
+					return ' folders:sub';
+				default:
+					return ' folders:all';
+			}
+		} else {
+			return '';
+		}
+	}
+
 	public function GetMessages($AccountID, $Senders, $Period = '', $Folder = 'INBOX', $Offset = 0, $Limit = 20, $Search = '', $Filters = '', $UseThreading = false, $InboxUidnext = '', $SortBy = null, $SortOrder = null)
 	{
 		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
 		$sSearch = \trim((string) $Search);
 		if (is_array($Senders) && count($Senders) > 0) {
-			$sSearch = \trim($sSearch . ' from:' . implode(',', $Senders));
+			$Search = \trim($Search . ' from:' . implode(',', $Senders)) . $this->getSearchFoldersString();
 		}
 
 		$aFilters = [];
@@ -174,7 +192,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$date->modify('-' . $Period);
 			$fromDate = $date->format('Y.m.d');
 
-			$sSearch = $sSearch . ' date:'. $fromDate . '/' . $toDate;
+			$Search = $Search . ' date:'. $fromDate . '/' . $toDate;
 		}
 
 		$iOffset = (int) $Offset;
@@ -212,7 +230,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$sSortOrder = $SortOrder === \Aurora\System\Enums\SortOrder::DESC ? 'REVERSE' : '';
 
 		$aFolderObjects = \Closure::bind(
-			function ($oMailModule) use ($oAccount, $Folder, $Search, $sSearch) { 
+			function ($oMailModule) use ($oAccount, $Folder, $Search, &$sSearch) { 
 				return $oMailModule->getFoldersForSearch($oAccount, $Folder, $Search, $sSearch);
 			}, null, MailModule::class
 		)($MailModule);

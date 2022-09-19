@@ -3,7 +3,10 @@
 const
 	_ = require('underscore'),
 
-	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js')
+	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
+
+	ModulesManager = require('%PathToCoreWebclientModule%/js/ModulesManager.js'),
+	MailCache = ModulesManager.run('MailWebclient', 'getMailCache')
 ;
 
 module.exports = {
