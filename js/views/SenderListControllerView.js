@@ -39,7 +39,7 @@ function getSearchFoldersString ()
 
 function CSenderListControllerView()
 {
-	this.currentSender = ko.observable('');
+	this.currentSenderEmail = ko.observable('');
 	this.senders = ko.observableArray([]);
 	this.sendersExpanded = ko.observable(!!Storage.getData('sendersExpanded'));
 	this.isLoading = ko.observable(false);
@@ -79,7 +79,7 @@ function CSenderListControllerView()
 				this.selectedSender = null;
 			}
 
-			const sender = this.senders().find(sender => this.currentSender() === sender.value);
+			const sender = this.senders().find(sender => this.currentSenderEmail() === sender.value);
 			if (sender) {
 				const inboxFolder = MailCache.folderList().currentFolder();
 	
@@ -94,7 +94,7 @@ function CSenderListControllerView()
 					this.showLastSenders(true);
 				}
 			}
-		});
+		}).extend({ throttle: 1 });
 		MailCache.currentAccountId.subscribe(() => {
 			this.populateSenders();
 		});
@@ -145,10 +145,10 @@ CSenderListControllerView.prototype.onRoute = function (aParams)
 	}
 	const parsedParams = LinksUtils.parseMailbox(aParams);
 	if (parsedParams.Folder === Settings.SendersFolder) {
-		this.currentSender(parsedParams.CurrentSender);
+		this.currentSenderEmail(parsedParams.CurrentSender);
 		this.mailView.setCustomMessageList('%ModuleName%', this.messageList);
 	} else {
-		this.currentSender('');
+		this.currentSenderEmail('');
 		this.mailView.removeCustomMessageList('%ModuleName%', this.messageList);
 	}
 };

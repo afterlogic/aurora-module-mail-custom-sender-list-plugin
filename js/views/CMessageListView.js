@@ -538,6 +538,7 @@ CMessageListView.prototype.onRoute = function (aParams)
 		sCurrentFolder = this.folderFullName() || this.folderList().inboxFolderFullName(),
 		bRouteChanged = this.currentPage() !== oParams.Page ||
 			sCurrentFolder !== oParams.Folder ||
+			this.currentSender() !== oParams.CurrentSender ||
 			this.filters() !== oParams.Filters || (oParams.Filters === Enums.FolderFilter.Unseen && MailCache.waitForUnseenMessages()) ||
 			this.search() !== oParams.Search || this.sSortBy !== oParams.SortBy || this.iSortOrder !== oParams.SortOrder,
 		bMailsPerPageChanged = MailSettings.MailsPerPage !== this.oPageSwitcher.perPage()
