@@ -8,13 +8,17 @@ const
 
 	App = require('%PathToCoreWebclientModule%/js/App.js'),
 	ModulesManager = require('%PathToCoreWebclientModule%/js/ModulesManager.js'),
+	Routing = require('%PathToCoreWebclientModule%/js/Routing.js'),
 	Storage = require('%PathToCoreWebclientModule%/js/Storage.js'),
 
 	MailCache = ModulesManager.run('MailWebclient', 'getMailCache'),
 	MailSettings = require('modules/MailWebclient/js/Settings.js'),
 
+	LinksUtils = require('modules/%ModuleName%/js/utils/Links.js'),
+
 	SendersUtils = require('modules/%ModuleName%/js/utils/senders.js'),
-	Settings = require('modules/%ModuleName%/js/Settings.js')
+	Settings = require('modules/%ModuleName%/js/Settings.js'),
+	CMessageListView = require('modules/%ModuleName%/js/views/CMessageListView.js')
 ;
 function CSenderListControllerView()
 {
