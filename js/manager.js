@@ -16,12 +16,17 @@ module.exports = function (appData) {
 	}
 
 	return {
+		getSenderListSettingsFormView: function () {
+			return SenderListControllerView;
+		},
+
 		start: function (ModulesManager) {
 			if (!ModulesManager.isModuleEnabled('MailWebclient')) {
 				return;
 			}
 
 			App.subscribeEvent('MailWebclient::RegisterFolderListController', function (registerFolderListController) {
+
 				const SenderListControllerView = require('modules/%ModuleName%/js/views/SenderListControllerView.js');
 				registerFolderListController(SenderListControllerView, 'UnderInboxFolder');
 			});

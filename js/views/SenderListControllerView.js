@@ -16,7 +16,7 @@ const
 
 	LinksUtils = require('modules/%ModuleName%/js/utils/Links.js'),
 
-	SendersUtils = require('modules/%ModuleName%/js/utils/senders.js'),
+	SendersUtils = require('modules/%ModuleName%/js/utils/Senders.js'),
 	Settings = require('modules/%ModuleName%/js/Settings.js'),
 	CMessageListView = require('modules/%ModuleName%/js/views/CMessageListView.js')
 ;
@@ -115,13 +115,6 @@ CSenderListControllerView.prototype.setLastSendersMaxHeight = function ()
 	}
 };
 
-CSenderListControllerView.prototype.getCurrentSearchSender = function ()
-{
-	return this.senders().find(sender => {
-		return this.currentSender() === sender.value;
-	}) || null;
-}
-
 CSenderListControllerView.prototype.onShow = function ()
 {
 	this.setLastSendersMaxHeight();
@@ -165,19 +158,22 @@ CSenderListControllerView.prototype.populateSenders = async function (forceSync 
 	}
 };
 
-CSenderListControllerView.prototype.searchMessagesForSender = function (email)
+CSenderListControllerView.prototype.searchMessagesForSender = function (senderEmail)
 {
 	var
 		AccountList = require('modules/MailWebclient/js/AccountList.js'),
 		oCurrAccount = AccountList.getCurrent(),
-		sAccountHash = oCurrAccount ? oCurrAccount.hash() : '';
+		sAccountHash = oCurrAccount ? oCurrAccount.hash() : ''
+	;
 
 	Routing.replaceHash([
 		'mail', 
 		sAccountHash, 
 		Settings.SendersFolder, 
-		'sender:' + email
+		'sender:' + senderEmail
 	]);
 };
 
-module.exports = new CSenderListControllerView();
+var SenderListControllerView = new CSenderListControllerView();
+
+module.exports = SenderListControllerView;

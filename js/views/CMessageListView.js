@@ -33,7 +33,9 @@ var
 	MessagesDictionary = require('modules/MailWebclient/js/MessagesDictionary.js'),
 	CMessageModel = require('modules/MailWebclient/js/models/CMessageModel.js'),
 
-	LinksUtils = require('modules/%ModuleName%/js/utils/Links.js')
+	LinksUtils = require('modules/%ModuleName%/js/utils/Links.js'),
+
+	SendersUtils = require('modules/%ModuleName%/js/utils/Senders.js')
 ;
 
 require("jquery-ui/ui/widgets/datepicker");
@@ -197,9 +199,10 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 
 	this.searchText = ko.computed(function () {
 		var
+			sender = SendersUtils.getSenderFromStorage(this.currentSender()),
 			oTextOptions = {
 				'SEARCH': this.calculateSearchStringForDescription(),
-				'FOLDER': this.currentSender()
+				'FOLDER': sender ? sender.label : ''
 			}
 		;
 		if (this.searchFoldersMode() === Enums.SearchFoldersMode.Sub)
@@ -542,6 +545,7 @@ CMessageListView.prototype.onRoute = function (aParams)
 		bMailsPerPageChanged = MailSettings.MailsPerPage !== this.oPageSwitcher.perPage()
 	;
 	this.currentSender(oParams.CurrentSender);
+
 	this.pageSwitcherLocked(true);
 	if (sCurrentFolder !== oParams.Folder || this.search() !== oParams.Search || this.filters() !== oParams.Filters)
 	{

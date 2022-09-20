@@ -113,8 +113,13 @@ function getFromServer() {
 	});
 }
 
+function getSenderFromStorage(email) {
+	return this.getFromStorage().find(sender => email === sender.value);
+}
+
 module.exports = {
 	getFromStorage,
 	needToSync,
-	getFromServer
+	getFromServer,
+	getSenderFromStorage
 };
