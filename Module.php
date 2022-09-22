@@ -186,13 +186,13 @@ class Module extends \Aurora\System\Module\AbstractModule
 			});
 		}
 
-		if (!empty($Period)) {
+		if (!empty($Period) && isset($Period[0]) && is_numeric($Period[0])) {
 			$date = new DateTime('now');
 			$toDate = $date->format('Y.m.d');
 			$date->modify('-' . $Period);
 			$fromDate = $date->format('Y.m.d');
 
-			$Search = $Search . ' date:'. $fromDate . '/' . $toDate;
+			$Search .= ' date:'. $fromDate . '/' . $toDate;
 		}
 
 		$iOffset = (int) $Offset;
