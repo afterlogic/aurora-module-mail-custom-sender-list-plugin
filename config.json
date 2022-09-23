@@ -14,13 +14,13 @@
 	"SenderFolderMinMessagesCount_Description": [
 		"If sender has sent less messages than this number their messages will appear in the 'Rest mail' virtual folder",
 		"string"
-	]
+	],
 	"SystemFoldersToExclude": [
-        [],
-        "array"
-    ],
+		[],
+		"array"
+	],
 	"SystemFoldersToExclude_Description": [
-        "List of folder types to exclude. Possible values: 1 - Inbox, 2 - Sent, 3 - Drafts, 4 - Spam, 5 - Trash, 6 - Virus",
-        "string"
-    ]
+		"List of folder types to exclude. Possible values: 1 - Inbox, 2 - Sent, 3 - Drafts, 4 - Spam, 5 - Trash, 6 - Virus",
+		"string"
+	]
 }
