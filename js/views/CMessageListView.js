@@ -290,11 +290,6 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 			return typeof message.longUid === 'function' && message.longUid() === currentMessageLongUid;
 		}) || null;
 		this.selector.itemSelected(currentMessageListItem);
-		if (currentMessageListItem) {
-			setTimeout(() => {
-				currentMessageListItem && currentMessageListItem.seen(true);
-			});
-		}
 	}, this);
 
 	this.checkedUids = ko.computed(function () {
@@ -445,13 +440,6 @@ CMessageListView.prototype.createDatePickerObject = function (oElement, value)
 	});
 };
 
-/**
- * @param {string} sFolder
- * @param {number} iPage
- * @param {string} sUid
- * @param {string} sSortBy
- * @param {string} iSortOrder
- */
 CMessageListView.prototype.changeRoutingForMessageList = function (sFolder, iPage, sUid, sSearch, sFilters, sSortBy, iSortOrder)
 {
 	var bSame = Routing.setHash(LinksUtils.getMailbox(sFolder, iPage, sUid, sSearch, sFilters, sSortBy, iSortOrder));
@@ -665,33 +653,26 @@ CMessageListView.prototype.requestMessageList = function ()
 
 
 /**
- * @param {Object} oResponse
- * @param {Object} oParameters
+ * @param {Object} response
  */
- CMessageListView.prototype.parseMessageList = function (oResponse, oParameters)
+ CMessageListView.prototype.parseMessageList = function (response)
  {
-	 var
-		 oResult = oResponse.Result,
-		 bTrustThreadInfo = oParameters.UseThreading
-	 ;
-	 
-	 if (oResult !== false && oResult['@Object'] === 'Collection/MessageCollection')
-	 {
-		 this.oPageSwitcher.setCount(oResult.MessageResultCount);
-		 const messages = oResult['@Collection'].map(messageData => {
-			let message = MessagesDictionary.get([MailCache.currentAccountId(), messageData.Folder, messageData.Uid.toString()]);
-			if (!message) {
-				message = new CMessageModel();
-			}
-			message.parse(messageData, MailCache.currentAccountId(), false, bTrustThreadInfo);
-			MessagesDictionary.set([message.accountId(), message.folder(), message.uid()], message);
+	this.isLoading(false);
+	const result = response.Result;
+	if (result !== false && result['@Object'] === 'Collection/MessageCollection') {
+		this.oPageSwitcher.setCount(result.MessageResultCount);
+		const messages = result['@Collection'].map(messageData => {
+			const
+				accountId = MailCache.currentAccountId(),
+				folderFullName = messageData.Folder,
+				folder = MailCache.getFolderByFullName(accountId, folderFullName),
+				message = folder.parseAndCacheMessage(messageData, false, false)
+			;
 			return message;
-		 });
-		 this.collection(messages);
-
-		 this.isLoading(false);
-	 }
- };
+		});
+		this.collection(messages);
+	}
+};
 
 CMessageListView.prototype.calculateSearchStringFromAdvancedForm  = function ()
 {
@@ -923,10 +904,6 @@ CMessageListView.prototype.onFlagClick = function (message)
 CMessageListView.prototype.executeMarkAsRead = function ()
 {
 	const selectedUids = this.checkedOrSelectedUids();
-	const selectedMessages = this.collection().filter(message => selectedUids.includes(message.longUid()));
-	selectedMessages.forEach(message => {
-		message.seen(true);
-	});
 	MailCache.executeGroupOperation('SetMessagesSeen', selectedUids, 'seen', true);
 };
 
@@ -936,10 +913,6 @@ CMessageListView.prototype.executeMarkAsRead = function ()
 CMessageListView.prototype.executeMarkAsUnread = function ()
 {
 	const selectedUids = this.checkedOrSelectedUids();
-	const selectedMessages = this.collection().filter(message => selectedUids.includes(message.longUid()));
-	selectedMessages.forEach(message => {
-		message.seen(false);
-	});
 	MailCache.executeGroupOperation('SetMessagesSeen', selectedUids, 'seen', false);
 };
 
@@ -948,10 +921,7 @@ CMessageListView.prototype.executeMarkAsUnread = function ()
  */
 CMessageListView.prototype.executeMarkAllRead = function ()
 {
-	this.collection().forEach(message => {
-		message.seen(true);
-	});
-	MailCache.executeGroupOperation('SetAllMessagesSeen', [], 'seen', true);
+//	MailCache.executeGroupOperation('SetAllMessagesSeen', [], 'seen', true);
 };
 
 /**
@@ -1225,6 +1195,6 @@ CMessageListView.prototype.prepareSearchString = function (sSearch)
 		sSearch = ' ' + sSearch;
 	}
 	return 'sender:' + this.currentSender() + sSearch;
-}
+};
 
 module.exports = CMessageListView;
