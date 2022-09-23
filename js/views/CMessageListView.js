@@ -131,6 +131,14 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 	}, this);
 
 	this.collection = ko.observableArray([]);
+	App.subscribeEvent('MailWebclient::removeMessageFromDict::after', ([accountId, folder, uid]) => {
+		this.collection(this.collection().filter(message => {
+			return message && typeof message.accountId === 'function' &&
+			(message.accountId() !== accountId ||
+			message.folder() !== folder ||
+			message.uid() !== uid);
+		}));
+	});
 
 	this._search = ko.observable('');
 	this.search = ko.computed({
@@ -278,8 +286,15 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 	ko.computed(function () {
 		this.isFocused(false);
 		const currentMessageLongUid = this.currentMessage() ? this.currentMessage().longUid() : '';
-		const currentMessageListItem = this.collection().find(message => message.longUid() === currentMessageLongUid) || null;
+		const currentMessageListItem = this.collection().find(message => {
+			return typeof message.longUid === 'function' && message.longUid() === currentMessageLongUid;
+		}) || null;
 		this.selector.itemSelected(currentMessageListItem);
+		if (currentMessageListItem) {
+			setTimeout(() => {
+				currentMessageListItem && currentMessageListItem.seen(true);
+			});
+		}
 	}, this);
 
 	this.checkedUids = ko.computed(function () {
@@ -664,13 +679,15 @@ CMessageListView.prototype.requestMessageList = function ()
 	 {
 		 this.oPageSwitcher.setCount(oResult.MessageResultCount);
 		 const messages = oResult['@Collection'].map(messageData => {
-			const message = new CMessageModel();
-			message.parse(messageData, MailCache.iAccountId, false, bTrustThreadInfo);
+			let message = MessagesDictionary.get([MailCache.currentAccountId(), messageData.Folder, messageData.Uid.toString()]);
+			if (!message) {
+				message = new CMessageModel();
+			}
+			message.parse(messageData, MailCache.currentAccountId(), false, bTrustThreadInfo);
 			MessagesDictionary.set([message.accountId(), message.folder(), message.uid()], message);
 			return message;
 		 });
 		 this.collection(messages);
-		 MailCache.messages(messages);
 
 		 this.isLoading(false);
 	 }
@@ -887,39 +904,53 @@ CMessageListView.prototype.onBind = function ($viewDom)
 };
 
 /**
- * Puts / removes the message flag by clicking on it.
+ * Puts / removes the message flag by clicking on the message.
  *
- * @param {Object} oMessage
+ * @param {Object} message
  */
-CMessageListView.prototype.onFlagClick = function (oMessage)
+CMessageListView.prototype.onFlagClick = function (message)
 {
-	if (!this.isSavingDraft(oMessage))
-	{
-		MailCache.executeGroupOperation('SetMessageFlagged', [oMessage.longUid()], 'flagged', !oMessage.flagged());
+	if (!this.isSavingDraft(message)) {
+		const messageFlagged = message.flagged();
+		message.flagged(!messageFlagged);
+		MailCache.executeGroupOperation('SetMessageFlagged', [message.longUid()], 'flagged', !messageFlagged);
 	}
 };
 
 /**
- * Marks the selected messages read.
+ * Marks the selected messages as read.
  */
 CMessageListView.prototype.executeMarkAsRead = function ()
 {
-	MailCache.executeGroupOperation('SetMessagesSeen', this.checkedOrSelectedUids(), 'seen', true);
+	const selectedUids = this.checkedOrSelectedUids();
+	const selectedMessages = this.collection().filter(message => selectedUids.includes(message.longUid()));
+	selectedMessages.forEach(message => {
+		message.seen(true);
+	});
+	MailCache.executeGroupOperation('SetMessagesSeen', selectedUids, 'seen', true);
 };
 
 /**
- * Marks the selected messages unread.
+ * Marks the selected messages as unread.
  */
 CMessageListView.prototype.executeMarkAsUnread = function ()
 {
-	MailCache.executeGroupOperation('SetMessagesSeen', this.checkedOrSelectedUids(), 'seen', false);
+	const selectedUids = this.checkedOrSelectedUids();
+	const selectedMessages = this.collection().filter(message => selectedUids.includes(message.longUid()));
+	selectedMessages.forEach(message => {
+		message.seen(false);
+	});
+	MailCache.executeGroupOperation('SetMessagesSeen', selectedUids, 'seen', false);
 };
 
 /**
- * Marks Read all messages in a folder.
+ * Marks as read all messages in the folder.
  */
 CMessageListView.prototype.executeMarkAllRead = function ()
 {
+	this.collection().forEach(message => {
+		message.seen(true);
+	});
 	MailCache.executeGroupOperation('SetAllMessagesSeen', [], 'seen', true);
 };
 
@@ -999,36 +1030,35 @@ CMessageListView.prototype.executeDelete = function ()
  */
 CMessageListView.prototype.deleteMessages = function (aUids)
 {
-	var
-		sUidToOpenAfter = '',
-		oMessageToOpenAfter = null
-	;
-
+	const currentMessageLongUid = MailCache.currentMessage() && MailCache.currentMessage().longUid();
+	let nextMessageLongUid = '';
 	if (MailCache.uidList().filters() !== Enums.FolderFilter.Unseen
-			&& aUids.length === 1 && MailCache.currentMessage()
-			&& aUids[0] === MailCache.currentMessage().longUid())
-	{
-		sUidToOpenAfter = MailCache.prevMessageUid();
-		if (sUidToOpenAfter === '')
-		{
-			sUidToOpenAfter = MailCache.nextMessageUid();
+			&& aUids.length === 1
+			&& aUids[0] === currentMessageLongUid
+	) {
+		const currentMessageIndex = this.collection().findIndex(message => message.longUid() === currentMessageLongUid);
+		let nextMessage = null;
+		if (currentMessageIndex !== -1 && currentMessageIndex < (this.collection().length - 1)) {
+			nextMessage = this.collection()[currentMessageIndex + 1];
+		} else if (currentMessageIndex > 0) {
+			nextMessage = this.collection()[currentMessageIndex - 1];
+		}
+		if (nextMessage) {
+			nextMessageLongUid = nextMessage.longUid();
 		}
 	}
-	
-	if (aUids.length > 0)
-	{
-		MailUtils.deleteMessages(aUids, function () {
-			if (sUidToOpenAfter !== '')
-			{
-				oMessageToOpenAfter = _.find(this.collection(), function (oMessage) {
-					return oMessage && _.isFunction(oMessage.longUid) && (oMessage.longUid() === sUidToOpenAfter || oMessage.uid() === sUidToOpenAfter);
+
+	if (aUids.length > 0) {
+		MailUtils.deleteMessages(aUids, () => {
+			if (nextMessageLongUid !== '') {
+				const messageToOpen = this.collection().find((message) => {
+					return message && _.isFunction(message.longUid) && (message.longUid() === nextMessageLongUid || message.uid() === nextMessageLongUid);
 				});
-				if (oMessageToOpenAfter)
-				{
-					this.routeForMessage(oMessageToOpenAfter);
+				if (messageToOpen) {
+					this.routeForMessage(messageToOpen);
 				}
 			}
-		}.bind(this));
+		});
 	}
 };
 

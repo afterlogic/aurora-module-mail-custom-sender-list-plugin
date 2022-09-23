@@ -132,7 +132,7 @@ CSenderListControllerView.prototype.onRoute = function (aParams)
 		this.mailView.setCustomMessageList('%ModuleName%', this.messageList);
 	} else {
 		this.currentSenderEmail('');
-		this.mailView.removeCustomMessageList('%ModuleName%', this.messageList);
+		this.mailView.removeCustomMessageList('%ModuleName%');
 	}
 };
 
