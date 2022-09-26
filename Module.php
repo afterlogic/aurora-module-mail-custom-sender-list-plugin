@@ -134,6 +134,11 @@ class Module extends \Aurora\System\Module\AbstractModule
 		return $senders;
 	}
 
+	protected function isAllowedFolder($oFolder) {
+		return (!in_array($oFolder->getFolderXListType(), $this->aSystemFoldersToExclude) && 
+			!in_array($oFolder->getType(), $this->aSystemFoldersToExclude));
+	}
+
 	protected function getFolders($oAccount)
 	{
 		$aFolders = [];
@@ -142,8 +147,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 			
 		$folderColl->foreachWithSubFolders(function ($oFolder) use (&$aFolders) {
 			if ($oFolder->isSubscribed() && $oFolder->isSelectable()) {
-				if ($oFolder->getFolderXListType() !== FolderType::All &&
-					!in_array($oFolder->getType(), $this->aSystemFoldersToExclude)) {
+				if ($this->isAllowedFolder($oFolder)) {
 					$aFolders[] = $oFolder->getRawFullName();
 				}
 			}
@@ -237,7 +241,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$aFolders = [];
 		foreach ($aFolderObjects as $oFolder) {
-			if (!in_array($oFolder->getType(), $this->aSystemFoldersToExclude)) {
+			if ($this->isAllowedFolder($oFolder)) {
 				$aFolders[] = $oFolder->getRawFullName();
 			}
 		}
