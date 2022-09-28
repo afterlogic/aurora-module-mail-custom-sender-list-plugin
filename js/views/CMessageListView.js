@@ -30,13 +30,23 @@ var
 	Settings  = require('modules/%ModuleName%/js/Settings.js'),
 
 	MailCache = require('modules/MailWebclient/js/Cache.js'),
-	MessagesDictionary = require('modules/MailWebclient/js/MessagesDictionary.js'),
 	CMessageModel = require('modules/MailWebclient/js/models/CMessageModel.js'),
 
 	LinksUtils = require('modules/%ModuleName%/js/utils/Links.js'),
-
 	SendersUtils = require('modules/%ModuleName%/js/utils/Senders.js')
 ;
+
+Ajax.registerAbortRequestHandler(Settings.ServerModuleName, (request, openedRequest) => {
+	const
+		sender = Array.isArray(request.Parameters.Senders) && request.Parameters.Senders[0] || '',
+		openedRequestSender = Array.isArray(openedRequest.Parameters.Senders) && openedRequest.Parameters.Senders[0] || ''
+	;
+	return request.Module === Settings.ServerModuleName
+			&& request.Method === 'GetMessages'
+			&& openedRequest.Module === Settings.ServerModuleName
+			&& openedRequest.Method === 'GetMessages'
+			&& sender !== openedRequestSender;
+});
 
 require("jquery-ui/ui/widgets/datepicker");
 
@@ -626,27 +636,35 @@ CMessageListView.prototype.setCurrentFolder = function ()
 
 CMessageListView.prototype.requestMessageList = function ()
 {
-	var
-		iPage = this.oPageSwitcher.currentPage(),
-		iOffset = (iPage - 1) * MailSettings.MailsPerPage;
-	;
-
-	const Parameters = {
-		'AccountID': App.currentAccountId(), 
+	this.isLoading(true);
+	this.collection([]);
+	const parameters = {
+		'AccountID': App.currentAccountId(),
 		'Senders': [this.currentSender()],
 		'Period': Settings.SearchPeriod,
-		'Offset': iOffset,
+		'Offset': (this.oPageSwitcher.currentPage() - 1) * MailSettings.MailsPerPage,
 		'Limit': MailSettings.MailsPerPage,
 		'Search': this.search(),
 		'Filters': this.filters(),
 		'SortBy': this.sSortBy,
 		'SortOrder': this.iSortOrder
 	};
-	this.isLoading(true);
-	this.collection([]);
-	Ajax.send(Settings.ServerModuleName, 'GetMessages', Parameters, function (oResponse) {
+	Ajax.send(Settings.ServerModuleName, 'GetMessages', parameters, function (oResponse) {
 		if (oResponse && oResponse.Result) {
-			this.parseMessageList(oResponse, Parameters);
+			const
+				isCurrentList = parameters.AccountID === App.currentAccountId() &&
+					parameters.Senders[0] === this.currentSender() &&
+					parameters.Period === Settings.SearchPeriod &&
+					parameters.Offset === (this.oPageSwitcher.currentPage() - 1) * MailSettings.MailsPerPage &&
+					parameters.Limit === MailSettings.MailsPerPage &&
+					parameters.Search === this.search() &&
+					parameters.Filters === this.filters() &&
+					parameters.SortBy === this.sSortBy &&
+					parameters.SortOrder === this.iSortOrder
+			;
+			if (isCurrentList) {
+				this.parseMessageList(oResponse, parameters);
+			}
 		}
 	}, this);
 };
@@ -661,15 +679,18 @@ CMessageListView.prototype.requestMessageList = function ()
 	const result = response.Result;
 	if (result !== false && result['@Object'] === 'Collection/MessageCollection') {
 		this.oPageSwitcher.setCount(result.MessageResultCount);
-		const messages = result['@Collection'].map(messageData => {
-			const
-				accountId = MailCache.currentAccountId(),
-				folderFullName = messageData.Folder,
-				folder = MailCache.getFolderByFullName(accountId, folderFullName),
-				message = folder.parseAndCacheMessage(messageData, false, false)
-			;
-			return message;
-		});
+		const messages = result['@Collection']
+			.map(messageData => {
+				const
+					accountId = MailCache.currentAccountId(),
+					folderFullName = messageData.Folder,
+					folder = MailCache.getFolderByFullName(accountId, folderFullName),
+					message = folder ? folder.parseAndCacheMessage(messageData, false, false) : null
+				;
+				return message;
+			})
+			.filter(message => !!message)
+		;
 		this.collection(messages);
 	}
 };
