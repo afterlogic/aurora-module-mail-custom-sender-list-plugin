@@ -107,6 +107,10 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 	}, this);
 
 	this.currentMessage = MailCache.currentMessage;
+	this.currentMessage.subscribe(function () {
+		this.isFocused(false);
+		this.selector.itemSelected(this.currentMessage());
+	}, this);
 
 	this.folderList = MailCache.folderList;
 	this.folderList.subscribe(function () {
@@ -292,15 +296,6 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 		false,
 		false // don't select new item before routing executed
 	);
-
-	ko.computed(function () {
-		this.isFocused(false);
-		const currentMessageLongUid = this.currentMessage() ? this.currentMessage().longUid() : '';
-		const currentMessageListItem = this.collection().find(message => {
-			return typeof message.longUid === 'function' && message.longUid() === currentMessageLongUid;
-		}) || null;
-		this.selector.itemSelected(currentMessageListItem);
-	}, this);
 
 	this.checkedUids = ko.computed(function () {
 		var
