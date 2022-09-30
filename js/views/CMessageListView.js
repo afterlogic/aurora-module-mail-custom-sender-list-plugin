@@ -153,6 +153,8 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 			message.uid() !== uid);
 		}));
 	});
+	this.collection.subscribe(this.onMessagesSubscribe, this);
+	this.longUidInRoute = ko.observable('');
 
 	this._search = ko.observable('');
 	this.search = ko.computed({
@@ -532,6 +534,14 @@ CMessageListView.prototype.onHide = function (aParams)
 	}
 };
 
+CMessageListView.prototype.onMessagesSubscribe = function ()
+{
+	if (!this.currentMessage() && this.longUidInRoute()) {
+		const messageData = MailCache.getMessageActualIdentifiers(MailCache.currentAccountId(), this.folderFullName(), this.longUidInRoute());
+		MailCache.setCurrentMessage(messageData.iAccountId, messageData.sFolder, messageData.sUid);
+	}
+};
+
 /**
  * @param {Array} aParams
  */
@@ -548,6 +558,7 @@ CMessageListView.prototype.onRoute = function (aParams)
 		bMailsPerPageChanged = MailSettings.MailsPerPage !== this.oPageSwitcher.perPage()
 	;
 	this.currentSender(oParams.CurrentSender);
+	this.longUidInRoute(oParams.Uid);
 
 	this.pageSwitcherLocked(true);
 	if (sCurrentFolder !== oParams.Folder || this.search() !== oParams.Search || this.filters() !== oParams.Filters)
@@ -849,6 +860,11 @@ CMessageListView.prototype.routeForMessage = function (oMessage)
 			}
 		}
 	}
+};
+
+CMessageListView.prototype.unbind = function ()
+{
+	this.selector.unbind();
 };
 
 /**
