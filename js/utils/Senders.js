@@ -57,12 +57,14 @@ function prepareSenders(senders) {
 	const restSendersCount = restSenders
 			.map(sender => sender.count)
 			.reduce((accumulator, count) => accumulator + count, 0);
-	mainSenders.push({
-		label: TextUtils.i18n('%MODULENAME%/LABEL_REST_MAILS'),
-		value: restSendersEmail,
-		count: restSendersCount,
-		selected: ko.observable(false)
-	});
+	if (restSendersCount > 0) {
+		mainSenders.push({
+			label: TextUtils.i18n('%MODULENAME%/LABEL_REST_MAILS'),
+			value: restSendersEmail,
+			count: restSendersCount,
+			selected: ko.observable(false)
+		});
+	}
 	return mainSenders;
 }
 
