@@ -64,11 +64,7 @@ function CSenderListControllerView()
 
 			const sender = this.senders().find(sender => this.currentSenderEmail() === sender.value);
 			if (sender) {
-				const inboxFolder = MailCache.folderList().currentFolder();
-	
-				if (inboxFolder) {
-					inboxFolder.selected(false);
-				}
+				$('html').addClass('custom-mail-sender-selected');
 				sender.selected(true);
 				this.selectedSender = sender;
 				this.sendersExpanded(true);
@@ -76,6 +72,8 @@ function CSenderListControllerView()
 					this.setLastSendersMaxHeight();
 					this.showLastSenders(true);
 				}
+			} else {
+				$('html').removeClass('custom-mail-sender-selected');
 			}
 		}).extend({ throttle: 1 });
 		MailCache.currentAccountId.subscribe(() => {
