@@ -101,14 +101,14 @@ class Module extends \Aurora\System\Module\AbstractModule
 		if (count($aFolders) === 0) {
 			$aFolders = $this->getFolders($oAccount);
 		}
+
 		foreach ($aFolders as $folderName) {
-			$messageColl = MailModule::getInstance()->getMailManager()->getMessageList(
-				$oAccount, 
-				$folderName, 
-				0, 
-				999,
-				$sSearch
-			);
+			$aMessagesInfo = MailModule::getInstance()->getMailManager()->getMessagesInfo($oAccount, $folderName, $sSearch);
+			$aUids = array_map(function($item) {
+				return $item['uid'];
+			}, $aMessagesInfo);
+			$messageColl = MailModule::getInstance()->getMailManager()->getMessageListByUids($oAccount, $folderName, $aUids);
+
 			$messageColl->ForeachList(
 				function ($message) use (&$senders) {
 					$fromColl = $message->getFrom();
@@ -146,10 +146,10 @@ class Module extends \Aurora\System\Module\AbstractModule
 		$folderColl = MailModule::getInstance()->getMailManager()->getFolders($oAccount);
 			
 		$folderColl->foreachWithSubFolders(function ($oFolder) use (&$aFolders) {
-			if ($oFolder->isSubscribed() && $oFolder->isSelectable()) {
+//			if ($oFolder->isSubscribed() && $oFolder->isSelectable()) {
 				if ($this->isAllowedFolder($oFolder)) {
 					$aFolders[] = $oFolder->getRawFullName();
-				}
+//				}
 			}
 		});
 		return $aFolders;
