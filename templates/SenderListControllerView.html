@@ -1,6 +1,7 @@
-<div class="item folder-level1 canSelect accordion">
+<div class="item folder-level1 canSelect accordion CustomSenders">
 	<a class="title" href="javascript: void(0);">
 		<span class="count icon checkstate" data-bind="css: { 'process': isLoading }, click: function () { populateSenders(true); }"></span>
+		<span class="count icon settings" data-bind="click: openSettings"></span>
 		<span class="name">
 			<span class="icon senders"></span>
 			<span class="text" data-bind="i18n: {'key': '%MODULENAME%/LABEL_SENDERS'}"></span>
@@ -10,6 +11,13 @@
 			></span>
 		</span>
 	</a>
+	<div class="options " data-bind="css: {'expanded': sendersSettingsExpanded()}">
+		<!-- ko foreach: searchFoldersValues -->
+		<div class="item canSelect" data-bind="css: {'selected': value === $parent.searchFolders()}, click: $parent.onSelectFolderSettingBind">
+			<span class="title" data-bind="text: label"></span>
+		</div>
+		<!-- /ko -->
+	</div>
 	<div class="children" data-bind="visible: sendersExpanded">
 		<!-- ko foreach: firstSenders -->
 			<div class="item folder-level2 canSelect"

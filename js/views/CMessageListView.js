@@ -101,6 +101,9 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 		if (Settings.SearchFolders === 'inbox+subfolders') {
 			return TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_INBOX_AND_SUBFOLDERS');
 		}
+		if (Settings.SearchFolders === 'sent') {
+			return TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_SENT');
+		}
 		if (Settings.SearchFolders === 'all') {
 			return TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_ALL_FOLDERS');
 		}

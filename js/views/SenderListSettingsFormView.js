@@ -30,6 +30,7 @@ function CSenderListSettingsFormView()
 	this.searchFoldersValues = [
 		{ value: 'inbox', label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_INBOX') },
 		{ value: 'inbox+subfolders', label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_INBOX_AND_SUBFOLDERS') },
+		{ value: 'sent', label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_SENT') },
 		{ value: 'all', label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_ALL_FOLDERS') }
 	];
 	this.searchFolders = ko.observable(Settings.SearchFolders);

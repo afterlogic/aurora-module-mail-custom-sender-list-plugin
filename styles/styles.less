@@ -1,35 +1,66 @@
 .folders_panel {
-	.folders .title .icon.senders:before {
+	.folders .CustomSenders .title .icon.senders:before {
 		content: "\e619";
 	}
 
-	.link_senders_action {
-		margin: 2px 0 10px 37px;
-		display: inline-block;
-	}
-
-	.last_senders_collapsed {
-		opacity: 0;
-		max-height: 0 !important;
-		visibility: hidden;
-		.transition(~"max-height 0.5s ease 0s, opacity 0.5s ease 0.2s, visibility 0.1s linear 0s");
-	}
-
-	.last_senders_expanded {
-		opacity: 1;
-		visibility: visible;
-		.transition(~"max-height 0.5s ease 0s, opacity 0.5s ease 0.2s, visibility 0s linear 0s");
-	}
-
-	.icon.checkstate {
-		.init-icon-font();
-		&:before {
-			content: "\e607";
+	.CustomSenders {
+		.link_senders_action {
+			margin: 2px 0 10px 37px;
+			display: inline-block;
 		}
-		.cssanimations &.process:before {
-			-webkit-animation: cycle 0.8s linear infinite;
-			-moz-animation: cycle 0.8s linear infinite;
-			animation: cycle 0.8s linear infinite;
+	
+		.last_senders_collapsed {
+			opacity: 0;
+			max-height: 0 !important;
+			visibility: hidden;
+			.transition(~"max-height 0.5s ease 0s, opacity 0.5s ease 0.2s, visibility 0.1s linear 0s");
+		}
+	
+		.last_senders_expanded {
+			opacity: 1;
+			visibility: visible;
+			.transition(~"max-height 0.5s ease 0s, opacity 0.5s ease 0.2s, visibility 0s linear 0s");
+		}
+	
+		.icon.checkstate {
+			.init-icon-font();
+			width: 23px !important;
+			height: 23px !important;
+			&:before {
+				content: "\e607";
+				font-size: 23px !important;
+			}
+			.cssanimations &.process:before {
+				-webkit-animation: cycle 0.8s linear infinite;
+				-moz-animation: cycle 0.8s linear infinite;
+				animation: cycle 0.8s linear infinite;
+			}
+		}
+		.icon.settings {
+			// .init-icon-font();
+			&:before {
+				content: "\e639";
+			}
+		}
+
+		.options {
+			background: rgba(255, 255, 255, 20%);
+			border-top: 1px solid rgba(0, 0, 0, 20%);
+			border-bottom: 1px solid rgba(255, 255, 255, 30%);
+			overflow: hidden;
+			max-height: 0;
+			opacity: 0;
+			transition: max-height 500ms ease 0s, opacity 500ms ease 0ms;
+
+			&.expanded {
+				opacity: 1;
+				max-height: 150px;
+				transition: max-height 500ms ease 0s, opacity 300ms ease 0ms;
+			}
+
+			.title {
+				font-size: 9pt !important;
+			}
 		}
 	}
 }

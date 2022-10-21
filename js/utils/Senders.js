@@ -33,8 +33,12 @@ function getSearchFoldersArray ()
 		case 'inbox':
 			return [inboxFolder.fullName()];
 		case 'inbox+subfolders':
-			const subfolders = inboxFolder.subfolders().map(folder => folder.fullName());
-			return [inboxFolder.fullName()].concat(subfolders);
+			const iboxSubfolders = inboxFolder.subfolders().map(folder => folder.fullName());
+			return [inboxFolder.fullName()].concat(iboxSubfolders);
+		case 'sent':
+			const sentFolder = MailCache.folderList().sentFolder();
+			const sentSubfolders = sentFolder.subfolders().map(folder => folder.fullName());
+			return [sentFolder.fullName()].concat(sentSubfolders);
 		default:
 			return [];
 	}

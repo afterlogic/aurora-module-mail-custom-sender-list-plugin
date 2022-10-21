@@ -81,6 +81,9 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
+		$user = Api::getAuthenticatedUser();
+		$sSearchFolders = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
+
 		$oAccount = MailModule::getInstance()->getAccountsManager()->getAccountById($AccountID);
 
 		MailModule::checkAccess($oAccount);
@@ -111,15 +114,31 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 			$messageColl->ForeachList(
 				function ($message) use (&$senders) {
-					$fromColl = $message->getFrom();
-					if ($fromColl && 0 < $fromColl->Count()) {
-						$from =& $fromColl->GetByIndex(0);
-						if ($from) {
-							$fromEmail = trim($from->GetEmail());
-							if (!isset($senders[$fromEmail])) {
-								$senders[$fromEmail] = 1;
-							} else {
-								$senders[$fromEmail]++;
+					if ($sSearchFolders === 'sent')
+					{
+						$toColl = $message->getTo();
+						if ($toColl && 0 < $toColl->Count()) {
+							$to =& $toColl->GetByIndex(0);
+							if ($to) {
+								$toEmail = trim($to->GetEmail());
+								if (!isset($senders[$toEmail])) {
+									$senders[$toEmail] = 1;
+								} else {
+									$senders[$toEmail]++;
+								}
+							}
+						}
+					} else {
+						$fromColl = $message->getFrom();
+						if ($fromColl && 0 < $fromColl->Count()) {
+							$from =& $fromColl->GetByIndex(0);
+							if ($from) {
+								$fromEmail = trim($from->GetEmail());
+								if (!isset($senders[$fromEmail])) {
+									$senders[$fromEmail] = 1;
+								} else {
+									$senders[$fromEmail]++;
+								}
 							}
 						}
 					}
@@ -165,6 +184,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 					return '';
 				case 'inbox+subfolders':
 					return ' folders:sub';
+				case 'sent':
+					return ' folders:sent';
 				default:
 					return ' folders:all';
 			}
@@ -177,9 +198,16 @@ class Module extends \Aurora\System\Module\AbstractModule
 	{
 		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
+		$user = Api::getAuthenticatedUser();
+		$sSearchFolders = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
+
 		$sSearch = \trim((string) $Search);
 		if (is_array($Senders) && count($Senders) > 0) {
-			$Search = \trim($Search . ' from:' . implode(',', $Senders)) . $this->getSearchFoldersString();
+			if ($sSearchFolders === 'sent') {
+				$Search = \trim($Search . ' to:' . implode(',', $Senders)) . $this->getSearchFoldersString();
+			} else {
+				$Search = \trim($Search . ' from:' . implode(',', $Senders)) . $this->getSearchFoldersString();
+			}
 		}
 
 		$aFilters = [];

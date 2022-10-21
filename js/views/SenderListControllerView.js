@@ -18,6 +18,8 @@ const
 
 	SendersUtils = require('modules/%ModuleName%/js/utils/Senders.js'),
 	Settings = require('modules/%ModuleName%/js/Settings.js'),
+	SettingsForm = require('modules/%ModuleName%/js/views/SenderListSettingsFormView.js'),
+	
 	CMessageListView = require('modules/%ModuleName%/js/views/CMessageListView.js')
 ;
 function CSenderListControllerView()
@@ -53,6 +55,11 @@ function CSenderListControllerView()
 		return this.lastSenders().length > 0;
 	});
 
+	this.sendersSettingsExpanded = ko.observable(false);
+	this.searchFolders = SettingsForm.searchFolders;
+	this.searchFoldersValues = SettingsForm.searchFoldersValues;
+	this.onSelectFolderSettingBind = _.bind(this.onSelectFolderSetting, this);
+	
 	if (MailCache) {
 		this.selectedSender = null;
 	
@@ -170,6 +177,19 @@ CSenderListControllerView.prototype.searchMessagesForSender = function (senderEm
 		Settings.SendersFolder, 
 		'sender:' + senderEmail
 	]);
+};
+
+CSenderListControllerView.prototype.openSettings = function ()
+{
+	this.sendersSettingsExpanded(!this.sendersSettingsExpanded());
+};
+
+CSenderListControllerView.prototype.onSelectFolderSetting = function (item)
+{
+	console.log("onSelectFolderSetting", item, arguments)
+	SettingsForm.searchFolders(item.value);
+	SettingsForm.save();
+	this.sendersSettingsExpanded(false);
 };
 
 var SenderListControllerView = new CSenderListControllerView();
