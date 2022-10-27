@@ -21,14 +21,17 @@
 			visibility: visible;
 			.transition(~"max-height 0.5s ease 0s, opacity 0.5s ease 0.2s, visibility 0s linear 0s");
 		}
-	
-		.icon.checkstate {
+		
+		.icon {
 			.init-icon-font();
-			width: 23px !important;
-			height: 23px !important;
+			padding-right: 0px;
+		}
+		.icon.checkstate {
+			width: 24px !important;
+			height: 24px !important;
 			&:before {
 				content: "\e607";
-				font-size: 23px !important;
+				font-size: 24px !important;
 			}
 			.cssanimations &.process:before {
 				-webkit-animation: cycle 0.8s linear infinite;
@@ -37,7 +40,7 @@
 			}
 		}
 		.icon.settings {
-			// .init-icon-font();
+			
 			&:before {
 				content: "\e639";
 			}

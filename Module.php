@@ -82,7 +82,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
 		$user = Api::getAuthenticatedUser();
-		$sSearchFolders = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
+		$sSearchFoldersMode = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
 
 		$oAccount = MailModule::getInstance()->getAccountsManager()->getAccountById($AccountID);
 
@@ -113,8 +113,8 @@ class Module extends \Aurora\System\Module\AbstractModule
 			$messageColl = MailModule::getInstance()->getMailManager()->getMessageListByUids($oAccount, $folderName, $aUids);
 
 			$messageColl->ForeachList(
-				function ($message) use (&$senders) {
-					if ($sSearchFolders === 'sent')
+				function ($message) use (&$senders, $sSearchFoldersMode) {
+					if ($sSearchFoldersMode === 'sent')
 					{
 						$toColl = $message->getTo();
 						if ($toColl && 0 < $toColl->Count()) {
