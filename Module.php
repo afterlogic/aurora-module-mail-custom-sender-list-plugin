@@ -116,17 +116,31 @@ class Module extends \Aurora\System\Module\AbstractModule
 				function ($message) use (&$senders, $sSearchFoldersMode) {
 					if ($sSearchFoldersMode === 'sent')
 					{
-						$toColl = $message->getTo();
-						if ($toColl && 0 < $toColl->Count()) {
-							$to =& $toColl->GetByIndex(0);
-							if ($to) {
-								$toEmail = trim($to->GetEmail());
-								if (!isset($senders[$toEmail])) {
-									$senders[$toEmail] = 1;
-								} else {
-									$senders[$toEmail]++;
+						$toCollection = $message->getTo();
+						if ($toCollection && 0 < $toCollection->Count()) {
+							$toCollection->ForeachList(function($toAddress) use (&$senders) {
+								if ($toAddress) {
+									$email = trim($toAddress->GetEmail());
+									if (!isset($senders[$email])) {
+										$senders[$email] = 1;
+									} else {
+										$senders[$email]++;
+									}
 								}
-							}
+							});
+						}
+						$ccCollection = $message->getCc();
+						if ($ccCollection && 0 < $ccCollection->Count()) {
+							$ccCollection->ForeachList(function($ccAddress) use (&$senders) {
+								if ($ccAddress) {
+									$email = trim($ccAddress->GetEmail());
+									if (!isset($senders[$email])) {
+										$senders[$email] = 1;
+									} else {
+										$senders[$email]++;
+									}
+								}
+							});
 						}
 					} else {
 						$fromColl = $message->getFrom();
