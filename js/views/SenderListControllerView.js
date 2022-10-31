@@ -10,9 +10,10 @@ const
 	ModulesManager = require('%PathToCoreWebclientModule%/js/ModulesManager.js'),
 	Routing = require('%PathToCoreWebclientModule%/js/Routing.js'),
 	Storage = require('%PathToCoreWebclientModule%/js/Storage.js'),
+	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 
 	MailCache = ModulesManager.run('MailWebclient', 'getMailCache'),
-	MailSettings = require('modules/MailWebclient/js/Settings.js'),
+	// MailSettings = require('modules/MailWebclient/js/Settings.js'),
 
 	LinksUtils = require('modules/%ModuleName%/js/utils/Links.js'),
 
@@ -24,6 +25,7 @@ const
 ;
 function CSenderListControllerView()
 {
+	this.sSendersFolderName = TextUtils.i18n('%MODULENAME%/LABEL_SENDERS_FROM', {'FOLDER': ''})
 	this.currentSenderEmail = ko.observable('');
 	this.senders = ko.observableArray([]);
 	this.sendersExpanded = ko.observable(!!Storage.getData('sendersExpanded'));
@@ -59,6 +61,14 @@ function CSenderListControllerView()
 	this.searchFolders = SettingsForm.searchFolders;
 	this.searchFoldersValues = SettingsForm.searchFoldersValues;
 	this.onSelectFolderSettingBind = _.bind(this.onSelectFolderSetting, this);
+
+	this.sendersFolderName = ko.computed(() => {
+		const currentOption = this.searchFoldersValues.find((item) => item.value === this.searchFolders());
+		const languageConstantName = currentOption.value === 'sent' ? '%MODULENAME%/LABEL_RECIPIENTS_FROM' : '%MODULENAME%/LABEL_SENDERS_FROM';
+
+		return currentOption ? TextUtils.i18n(languageConstantName, {'FOLDER': currentOption.label})
+			: TextUtils.i18n('%MODULENAME%/LABEL_SENDERS');
+	});
 	
 	if (MailCache) {
 		this.selectedSender = null;
@@ -186,10 +196,12 @@ CSenderListControllerView.prototype.openSettings = function ()
 
 CSenderListControllerView.prototype.onSelectFolderSetting = function (item)
 {
-	console.log("onSelectFolderSetting", item, arguments)
 	SettingsForm.searchFolders(item.value);
 	SettingsForm.save();
 	this.sendersSettingsExpanded(false);
+	//TODO make the request when the settings have been saved
+	_.delay(() => { this.populateSenders(true)}, 1000);
+
 };
 
 var SenderListControllerView = new CSenderListControllerView();

@@ -185,7 +185,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 				case 'inbox+subfolders':
 					return ' folders:sub';
 				case 'sent':
-					return ' folders:sent';
+					return ' folders:sub';
 				default:
 					return ' folders:all';
 			}
@@ -194,19 +194,22 @@ class Module extends \Aurora\System\Module\AbstractModule
 		}
 	}
 
-	public function GetMessages($AccountID, $Senders, $Period = '', $Folder = 'INBOX', $Offset = 0, $Limit = 20, $Search = '', $Filters = '', $UseThreading = false, $InboxUidnext = '', $SortBy = null, $SortOrder = null)
+	public function GetMessages($AccountID, $Senders, $Period = '', $Offset = 0, $Limit = 20, $Search = '', $Filters = '', $UseThreading = false, $InboxUidnext = '', $SortBy = null, $SortOrder = null)
 	{
+		// removed  $Folder = 'INBOX' argument
 		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
 		$user = Api::getAuthenticatedUser();
-		$sSearchFolders = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
+		$sSearchFoldersMode = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
 
 		$sSearch = \trim((string) $Search);
 		if (is_array($Senders) && count($Senders) > 0) {
-			if ($sSearchFolders === 'sent') {
+			if ($sSearchFoldersMode === 'sent') {
 				$Search = \trim($Search . ' to:' . implode(',', $Senders)) . $this->getSearchFoldersString();
+				$Folder = "Sent";
 			} else {
 				$Search = \trim($Search . ' from:' . implode(',', $Senders)) . $this->getSearchFoldersString();
+				$Folder = "INBOX";
 			}
 		}
 

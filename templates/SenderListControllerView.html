@@ -4,7 +4,7 @@
 		<span class="count icon settings" data-bind="click: openSettings"></span>
 		<span class="name">
 			<span class="icon senders"></span>
-			<span class="text" data-bind="i18n: {'key': '%MODULENAME%/LABEL_SENDERS'}"></span>
+			<span class="text" data-bind="text: sendersFolderName"></span>
 			<span class="collapse_handler"
 				  data-bind="css: {'expanded': sendersExpanded(), 'collapsed': !sendersExpanded()},
 				  click: triggerSendersExpanded"
