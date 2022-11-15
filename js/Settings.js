@@ -2,6 +2,7 @@
 
 const
 	_ = require('underscore'),
+	ko = require('knockout'),
 
 	Types = require('%PathToCoreWebclientModule%/js/utils/Types.js'),
 
@@ -13,7 +14,7 @@ module.exports = {
 	SenderFolderMinMessagesCount: 2,
 	NumberOfSendersToDisplay: 3,
 	SearchPeriod: '1 month',
-	SearchFolders: 'inbox',
+	searchFolders: ko.observable('inbox'),
 	ServerModuleName: '%ModuleName%',
 	SendersFolder: '__senders__',
 
@@ -30,7 +31,7 @@ module.exports = {
 			this.SenderFolderMinMessagesCount = Types.pInt(appDataSection.SenderFolderMinMessagesCount, this.SenderFolderMinMessagesCount);
 			this.NumberOfSendersToDisplay = Types.pInt(appDataSection.NumberOfSendersToDisplay, this.NumberOfSendersToDisplay);
 			this.SearchPeriod = Types.pString(appDataSection.SearchPeriod, this.SearchPeriod);
-			this.SearchFolders = Types.pString(appDataSection.SearchFolders, this.SearchFolders);
+			this.searchFolders(Types.pString(appDataSection.SearchFolders, this.searchFolders()));
 		}
 	},
 
@@ -45,6 +46,6 @@ module.exports = {
 	{
 		this.NumberOfSendersToDisplay = numberOfSendersToDisplay;
 		this.SearchPeriod = searchPeriod;
-		this.SearchFolders = searchFolders;
+		this.searchFolders(searchFolders);
 	}
 };

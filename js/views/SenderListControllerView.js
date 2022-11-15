@@ -1,7 +1,5 @@
 'use strict';
 
-const { doAfterPopulatingMessage } = require('../../../MailWebclient/js/views/MessagePaneView');
-
 const
 	ko = require('knockout'),
 	_ = require('underscore'),
@@ -13,19 +11,18 @@ const
 	TextUtils = require('%PathToCoreWebclientModule%/js/utils/Text.js'),
 
 	MailCache = ModulesManager.run('MailWebclient', 'getMailCache'),
-	// MailSettings = require('modules/MailWebclient/js/Settings.js'),
 
 	LinksUtils = require('modules/%ModuleName%/js/utils/Links.js'),
 
 	SendersUtils = require('modules/%ModuleName%/js/utils/Senders.js'),
 	Settings = require('modules/%ModuleName%/js/Settings.js'),
 	SettingsForm = require('modules/%ModuleName%/js/views/SenderListSettingsFormView.js'),
-	
+
 	CMessageListView = require('modules/%ModuleName%/js/views/CMessageListView.js')
 ;
 function CSenderListControllerView()
 {
-	this.sSendersFolderName = TextUtils.i18n('%MODULENAME%/LABEL_SENDERS_FROM', {'FOLDER': ''})
+	this.sSendersFolderName = TextUtils.i18n('%MODULENAME%/LABEL_SENDERS_FROM', {'FOLDER': ''});
 	this.currentSenderEmail = ko.observable('');
 	this.senders = ko.observableArray([]);
 	this.sendersExpanded = ko.observable(!!Storage.getData('sendersExpanded'));
@@ -98,6 +95,10 @@ function CSenderListControllerView()
 		});
 	}
 
+	Settings.searchFolders.subscribe(() => {
+		this.populateSenders();
+	});
+
 	App.subscribeEvent('MailWebclient::ConstructView::after', params => {
 		if ('CMessageListView' === params.Name) {
 			this.messageListView = params.View;
@@ -169,24 +170,24 @@ CSenderListControllerView.prototype.populateSenders = async function (forceSync 
 	if (SendersUtils.needToSync(forceSync)) {
 		this.isLoading(true);
 		this.senders(await SendersUtils.getFromServer());
+		if (this.currentSenderEmail() !== '') {
+			const hasCurrentSenderEmail = !!this.senders().find(sender => sender.value === this.currentSenderEmail());
+			if (hasCurrentSenderEmail) {
+				App.broadcastEvent('%ModuleName%::SendersChanged::after');
+			} else if (this.senders().length > 0) {
+				this.searchMessagesForSender(this.senders()[0].value)
+			} else {
+				Routing.setHash(LinksUtils.getMailbox());
+			}
+		}
+
 		this.isLoading(false);
 	}
 };
 
 CSenderListControllerView.prototype.searchMessagesForSender = function (senderEmail)
 {
-	var
-		AccountList = require('modules/MailWebclient/js/AccountList.js'),
-		oCurrAccount = AccountList.getCurrent(),
-		sAccountHash = oCurrAccount ? oCurrAccount.hash() : ''
-	;
-
-	Routing.replaceHash([
-		'mail', 
-		sAccountHash, 
-		Settings.SendersFolder, 
-		'sender:' + senderEmail
-	]);
+	Routing.replaceHash(LinksUtils.getMailbox(Settings.SendersFolder, 1, '', `sender:${senderEmail}`));
 };
 
 CSenderListControllerView.prototype.openSettings = function ()
@@ -199,9 +200,6 @@ CSenderListControllerView.prototype.onSelectFolderSetting = function (item)
 	SettingsForm.searchFolders(item.value);
 	SettingsForm.save();
 	this.sendersSettingsExpanded(false);
-	//TODO make the request when the settings have been saved
-	_.delay(() => { this.populateSenders(true)}, 1000);
-
 };
 
 var SenderListControllerView = new CSenderListControllerView();

@@ -94,20 +94,20 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 	this.searchSpan = ko.observable('');
 	this.highlightTrigger = ko.observable('');
 	this.selectedSearchFoldersMode = ko.observable('');
-	this.selectedSearchFoldersModeText = ko.computed(function () {
-		if (Settings.SearchFolders === 'inbox') {
+	this.selectedSearchFoldersModeText = ko.computed(() => {
+		if (Settings.searchFolders() === 'inbox') {
 			return TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_INBOX');
 		}
-		if (Settings.SearchFolders === 'inbox+subfolders') {
+		if (Settings.searchFolders() === 'inbox+subfolders') {
 			return TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_INBOX_AND_SUBFOLDERS');
 		}
-		if (Settings.SearchFolders === 'sent') {
+		if (Settings.searchFolders() === 'sent') {
 			return TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_SENT');
 		}
-		if (Settings.SearchFolders === 'all') {
+		if (Settings.searchFolders() === 'all') {
 			return TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_ALL_FOLDERS');
 		}
-	}, this);
+	});
 
 	this.currentMessage = MailCache.currentMessage;
 	this.currentMessage.subscribe(function () {
@@ -336,7 +336,6 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 	this.oPageSwitcher = new CPageSwitcherView(0, MailSettings.MailsPerPage);
 	this.oPageSwitcher.currentPage.subscribe(function (iPage) {
 		var
-			sFolder = MailCache.getCurrentFolderFullname(),
 			sUid = !App.isMobile() && this.currentMessage() ? this.currentMessage().longUid() : '',
 			sSearch = this.search()
 		;
@@ -414,7 +413,11 @@ function CMessageListView(fOpenMessageInNewWindowBound)
 	}, this);
 	
 	this.customMessageItemViewTemplate = ko.observable('');
-	
+
+	App.subscribeEvent('%ModuleName%::SendersChanged::after', () => {
+		this.requestMessageList();
+	});
+
 	App.broadcastEvent('MailWebclient::ConstructView::after', {'Name': this.ViewConstructorName, 'View': this, 'MailCache': MailCache});
 }
 

@@ -33,7 +33,7 @@ function CSenderListSettingsFormView()
 		{ value: 'sent', label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_SENT') },
 		{ value: 'all', label: TextUtils.i18n('%MODULENAME%/LABEL_SEARCH_IN_ALL_FOLDERS') }
 	];
-	this.searchFolders = ko.observable(Settings.SearchFolders);
+	this.searchFolders = ko.observable(Settings.searchFolders());
 }
 
 _.extendOwn(CSenderListSettingsFormView.prototype, CAbstractSettingsFormView.prototype);
@@ -53,7 +53,7 @@ CSenderListSettingsFormView.prototype.revertGlobalValues = function ()
 {
 	this.numberOfSendersToDisplay(Settings.NumberOfSendersToDisplay);
 	this.searchPeriod(Settings.SearchPeriod);
-	this.searchFolders(Settings.SearchFolders);
+	this.searchFolders(Settings.searchFolders());
 };
 
 CSenderListSettingsFormView.prototype.getParametersForSave = function ()

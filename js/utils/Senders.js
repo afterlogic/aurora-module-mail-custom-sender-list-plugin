@@ -29,7 +29,7 @@ function getSearchFoldersArray ()
 	if (!inboxFolder) {
 		return [];
 	}
-	switch (Settings.SearchFolders) {
+	switch (Settings.searchFolders()) {
 		case 'inbox':
 			return [inboxFolder.fullName()];
 		case 'inbox+subfolders':
@@ -83,7 +83,7 @@ let savedCurrentSettings = {};
 function needToSync(forceSync) {
 	const currentSettings = {
 		SearchPeriod: Settings.SearchPeriod,
-		SearchFolders: Settings.SearchFolders
+		SearchFolders: Settings.searchFolders()
 	};
 	if (JSON.stringify(currentSettings) !== JSON.stringify(savedCurrentSettings)) {
 		syncedAccounts = [];
