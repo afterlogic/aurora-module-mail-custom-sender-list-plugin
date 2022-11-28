@@ -286,7 +286,7 @@ class Module extends \Aurora\System\Module\AbstractModule
 
 		$aFolders = [];
 		foreach ($aFolderObjects as $oFolder) {
-			if ($this->isAllowedFolder($oFolder)) {
+			if ($this->isAllowedFolder($oFolder) || ($oFolder->getType() === 2 && $sSearchFoldersMode === 'sent')) {
 				$aFolders[] = $oFolder->getRawFullName();
 			}
 		}
