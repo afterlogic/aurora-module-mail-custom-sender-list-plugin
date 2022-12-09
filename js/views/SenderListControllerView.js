@@ -25,7 +25,7 @@ function CSenderListControllerView()
 	this.sSendersFolderName = TextUtils.i18n('%MODULENAME%/LABEL_SENDERS_FROM', {'FOLDER': ''});
 	this.currentSenderEmail = ko.observable('');
 	this.senders = ko.observableArray([]);
-	this.sendersExpanded = ko.observable(!!Storage.getData('sendersExpanded'));
+	this.sendersExpanded = ko.observable(!!Storage.getData('aurora_custom_senders-expanded'));
 	this.isLoading = ko.observable(false);
 	this.messageList = null;
 
@@ -115,7 +115,7 @@ CSenderListControllerView.prototype.ViewTemplate = '%ModuleName%_SenderListContr
 CSenderListControllerView.prototype.triggerSendersExpanded = function ()
 {
 	this.sendersExpanded(!this.sendersExpanded());
-	Storage.setData('sendersExpanded', this.sendersExpanded());
+	Storage.setData('aurora_custom_senders-expanded', this.sendersExpanded());
 };
 
 CSenderListControllerView.prototype.triggerShowLastSenders = function ()

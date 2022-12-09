@@ -73,7 +73,7 @@ function prepareSenders(senders) {
 }
 
 function getFromStorage() {
-	const senders = Types.pArray(Storage.getData(`customSenderList-${MailCache.currentAccountId()}`));
+	const senders = Types.pArray(Storage.getData(`aurora_custom_account_${MailCache.currentAccountId()}_sender-list`));
 	return prepareSenders(senders);
 }
 
@@ -110,7 +110,7 @@ function getFromServer() {
 					count: response.Result[email]
 				}));
 				senders.sort((a, b) => b.count - a.count);
-				Storage.setData(`customSenderList-${parameters.AccountID}`, senders);
+				Storage.setData(`aurora_custom_account_${parameters.AccountID}_sender-list`, senders);
 				resolve(prepareSenders(senders));
 			} else {
 				resolve(getFromStorage());
