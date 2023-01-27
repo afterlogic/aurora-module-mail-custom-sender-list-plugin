@@ -23,384 +23,389 @@ use DateTime;
  */
 class Module extends \Aurora\System\Module\AbstractModule
 {
-	protected $aRequireModules = ['Mail'];
+    protected $aRequireModules = ['Mail'];
 
-	protected $aSystemFoldersToExclude = [];
+    protected $aSystemFoldersToExclude = [];
 
-	/**
-	 * Initializes MailCustomSenderListPlugin Module.
-	 *
-	 * @ignore
-	 */
-	public function init()
-	{
-		$this->aSystemFoldersToExclude = $this->getConfig('SystemFoldersToExclude', []);
-	}
+    /**
+     * Initializes MailCustomSenderListPlugin Module.
+     *
+     * @ignore
+     */
+    public function init()
+    {
+        $this->aSystemFoldersToExclude = $this->getConfig('SystemFoldersToExclude', []);
+    }
 
-	/**
-	 * @return Module
-	 */
-	public static function Decorator()
-	{
-		return parent::Decorator();
-	}
+    /**
+     * @return Module
+     */
+    public static function Decorator()
+    {
+        return parent::Decorator();
+    }
 
-	public function GetSettings()
-	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
+    public function GetSettings()
+    {
+        \Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 
-		$user = Api::getAuthenticatedUser();
-		if ($user) {
-			return [
-				'SenderFolderMinMessagesCount' => $this->getConfig('SenderFolderMinMessagesCount', 2),
-				'NumberOfSendersToDisplay' => $user->getExtendedProp(self::GetName() . '::NumberOfSendersToDisplay', 3),
-				'SearchPeriod' => $user->getExtendedProp(self::GetName() . '::SearchPeriod', '1 month'),
-				'SearchFolders' => $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox'),
-			];
-		}
+        $user = Api::getAuthenticatedUser();
+        if ($user) {
+            return [
+                'SenderFolderMinMessagesCount' => $this->getConfig('SenderFolderMinMessagesCount', 2),
+                'NumberOfSendersToDisplay' => $user->getExtendedProp(self::GetName() . '::NumberOfSendersToDisplay', 3),
+                'SearchPeriod' => $user->getExtendedProp(self::GetName() . '::SearchPeriod', '1 month'),
+                'SearchFolders' => $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox'),
+            ];
+        }
 
-		return [];
-	}
+        return [];
+    }
 
-	public function UpdateSettings($NumberOfSendersToDisplay, $SearchPeriod, $SearchFolders)
-	{
-		\Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
+    public function UpdateSettings($NumberOfSendersToDisplay, $SearchPeriod, $SearchFolders)
+    {
+        \Aurora\System\Api::checkUserRoleIsAtLeast(\Aurora\System\Enums\UserRole::NormalUser);
 
-		$user = Api::getAuthenticatedUser();
-		if ($user) {
-			$user->setExtendedProp(self::GetName() . '::NumberOfSendersToDisplay', $NumberOfSendersToDisplay);
-			$user->setExtendedProp(self::GetName() . '::SearchPeriod', $SearchPeriod);
-			$user->setExtendedProp(self::GetName() . '::SearchFolders', $SearchFolders);
-			return $user->save();
-		}
+        $user = Api::getAuthenticatedUser();
+        if ($user) {
+            $user->setExtendedProp(self::GetName() . '::NumberOfSendersToDisplay', $NumberOfSendersToDisplay);
+            $user->setExtendedProp(self::GetName() . '::SearchPeriod', $SearchPeriod);
+            $user->setExtendedProp(self::GetName() . '::SearchFolders', $SearchFolders);
+            return $user->save();
+        }
 
-		return false;
-	}
+        return false;
+    }
 
-	public function GetSenders($AccountID, $Folders = [], $Period = '')
-	{
-		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
+    public function GetSenders($AccountID, $Folders = [], $Period = '')
+    {
+        Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
-		$user = Api::getAuthenticatedUser();
-		$sSearchFoldersMode = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
+        $user = Api::getAuthenticatedUser();
+        $sSearchFoldersMode = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
 
-		$oAccount = MailModule::getInstance()->getAccountsManager()->getAccountById($AccountID);
+        $oAccount = MailModule::getInstance()->getAccountsManager()->getAccountById($AccountID);
 
-		MailModule::checkAccess($oAccount);
+        MailModule::checkAccess($oAccount);
 
-		$sSearch = '';
-		if (!empty($Period)) {
-			$date = new DateTime('now');
-			$toDate = $date->format('Y.m.d');
-			$date->modify('-' . $Period);
-			$fromDate = $date->format('Y.m.d');
+        $sSearch = '';
+        if (!empty($Period)) {
+            $date = new DateTime('now');
+            $toDate = $date->format('Y.m.d');
+            $date->modify('-' . $Period);
+            $fromDate = $date->format('Y.m.d');
 
-			$sSearch = 'date:'. $fromDate . '/' . $toDate;
-		}
+            $sSearch = 'date:'. $fromDate . '/' . $toDate;
+        }
 
-		$senders = [];
-		
-		$aFolders = $Folders;
-		if (count($aFolders) === 0) {
-			$aFolders = $this->getFolders($oAccount);
-		}
+        $senders = [];
 
-		foreach ($aFolders as $folderName) {
-			$aMessagesInfo = MailModule::getInstance()->getMailManager()->getMessagesInfo($oAccount, $folderName, $sSearch);
-			$aUids = array_map(function($item) {
-				return $item['uid'];
-			}, $aMessagesInfo);
-			$messageColl = MailModule::getInstance()->getMailManager()->getMessageListByUids($oAccount, $folderName, $aUids);
+        $aFolders = $Folders;
+        if (count($aFolders) === 0) {
+            $aFolders = $this->getFolders($oAccount);
+        }
 
-			$messageColl->ForeachList(
-				function ($message) use (&$senders, $sSearchFoldersMode) {
-					if ($sSearchFoldersMode === 'sent')
-					{
-						$toCollection = $message->getTo();
-						if ($toCollection && 0 < $toCollection->Count()) {
-							$toCollection->ForeachList(function($toAddress) use (&$senders) {
-								if ($toAddress) {
-									$email = trim($toAddress->GetEmail());
-									if (!isset($senders[$email])) {
-										$senders[$email] = 1;
-									} else {
-										$senders[$email]++;
-									}
-								}
-							});
-						}
-						$ccCollection = $message->getCc();
-						if ($ccCollection && 0 < $ccCollection->Count()) {
-							$ccCollection->ForeachList(function($ccAddress) use (&$senders) {
-								if ($ccAddress) {
-									$email = trim($ccAddress->GetEmail());
-									if (!isset($senders[$email])) {
-										$senders[$email] = 1;
-									} else {
-										$senders[$email]++;
-									}
-								}
-							});
-						}
-					} else {
-						$fromColl = $message->getFrom();
-						if ($fromColl && 0 < $fromColl->Count()) {
-							$from =& $fromColl->GetByIndex(0);
-							if ($from) {
-								$fromEmail = trim($from->GetEmail());
-								if (!isset($senders[$fromEmail])) {
-									$senders[$fromEmail] = 1;
-								} else {
-									$senders[$fromEmail]++;
-								}
-							}
-						}
-					}
-				}
-			);
-		}
+        foreach ($aFolders as $folderName) {
+            $aMessagesInfo = MailModule::getInstance()->getMailManager()->getMessagesInfo($oAccount, $folderName, $sSearch);
+            $aUids = array_map(function ($item) {
+                return $item['uid'];
+            }, $aMessagesInfo);
+            $messageColl = MailModule::getInstance()->getMailManager()->getMessageListByUids($oAccount, $folderName, $aUids);
 
-		if (count($senders) > 1) {
-			$senders = collect($senders)->sort()->reverse()->toArray();
-		}
+            $messageColl->ForeachList(
+                function ($message) use (&$senders, $sSearchFoldersMode) {
+                    if ($sSearchFoldersMode === 'sent') {
+                        $toCollection = $message->getTo();
+                        if ($toCollection && 0 < $toCollection->Count()) {
+                            $toCollection->ForeachList(function ($toAddress) use (&$senders) {
+                                if ($toAddress) {
+                                    $email = trim($toAddress->GetEmail());
+                                    if (!isset($senders[$email])) {
+                                        $senders[$email] = 1;
+                                    } else {
+                                        $senders[$email]++;
+                                    }
+                                }
+                            });
+                        }
+                        $ccCollection = $message->getCc();
+                        if ($ccCollection && 0 < $ccCollection->Count()) {
+                            $ccCollection->ForeachList(function ($ccAddress) use (&$senders) {
+                                if ($ccAddress) {
+                                    $email = trim($ccAddress->GetEmail());
+                                    if (!isset($senders[$email])) {
+                                        $senders[$email] = 1;
+                                    } else {
+                                        $senders[$email]++;
+                                    }
+                                }
+                            });
+                        }
+                    } else {
+                        $fromColl = $message->getFrom();
+                        if ($fromColl && 0 < $fromColl->Count()) {
+                            $from =& $fromColl->GetByIndex(0);
+                            if ($from) {
+                                $fromEmail = trim($from->GetEmail());
+                                if (!isset($senders[$fromEmail])) {
+                                    $senders[$fromEmail] = 1;
+                                } else {
+                                    $senders[$fromEmail]++;
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
 
-		return $senders;
-	}
+        if (count($senders) > 1) {
+            $senders = collect($senders)->sort()->reverse()->toArray();
+        }
 
-	protected function isAllowedFolder($oFolder) {
-		return (!in_array($oFolder->getFolderXListType(), $this->aSystemFoldersToExclude) && 
-			!in_array($oFolder->getType(), $this->aSystemFoldersToExclude));
-	}
+        return $senders;
+    }
 
-	protected function getFolders($oAccount)
-	{
-		$aFolders = [];
+    protected function isAllowedFolder($oFolder)
+    {
+        return (!in_array($oFolder->getFolderXListType(), $this->aSystemFoldersToExclude) &&
+            !in_array($oFolder->getType(), $this->aSystemFoldersToExclude));
+    }
 
-		$folderColl = MailModule::getInstance()->getMailManager()->getFolders($oAccount);
-			
-		$folderColl->foreachWithSubFolders(function ($oFolder) use (&$aFolders) {
-//			if ($oFolder->isSubscribed() && $oFolder->isSelectable()) {
-				if ($this->isAllowedFolder($oFolder)) {
-					$aFolders[] = $oFolder->getRawFullName();
-//				}
-			}
-		});
-		return $aFolders;
-	}
+    protected function getFolders($oAccount)
+    {
+        $aFolders = [];
 
-	protected function getSearchFoldersString()
-	{
-		$user = Api::getAuthenticatedUser();
-		if ($user) {
-			$sSearchFolders = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
-			switch ($sSearchFolders) {
-				case 'inbox':
-					return '';
-				case 'inbox+subfolders':
-					return ' folders:sub';
-				case 'sent':
-					return ' folders:sub';
-				default:
-					return ' folders:all';
-			}
-		} else {
-			return '';
-		}
-	}
+        $folderColl = MailModule::getInstance()->getMailManager()->getFolders($oAccount);
 
-	public function GetMessages($AccountID, $Senders, $Period = '', $Offset = 0, $Limit = 20, $Search = '', $Filters = '', $UseThreading = false, $InboxUidnext = '', $SortBy = null, $SortOrder = null)
-	{
-		// removed  $Folder = 'INBOX' argument
-		Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
+        $folderColl->foreachWithSubFolders(function ($oFolder) use (&$aFolders) {
+            //			if ($oFolder->isSubscribed() && $oFolder->isSelectable()) {
+            if ($this->isAllowedFolder($oFolder)) {
+                $aFolders[] = $oFolder->getRawFullName();
+                //				}
+            }
+        });
+        return $aFolders;
+    }
 
-		$user = Api::getAuthenticatedUser();
-		$sSearchFoldersMode = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
+    protected function getSearchFoldersString()
+    {
+        $user = Api::getAuthenticatedUser();
+        if ($user) {
+            $sSearchFolders = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
+            switch ($sSearchFolders) {
+                case 'inbox':
+                    return '';
+                case 'inbox+subfolders':
+                    return ' folders:sub';
+                case 'sent':
+                    return ' folders:sub';
+                default:
+                    return ' folders:all';
+            }
+        } else {
+            return '';
+        }
+    }
 
-		$sSearch = \trim((string) $Search);
-		if (is_array($Senders) && count($Senders) > 0) {
-			if ($sSearchFoldersMode === 'sent') {
-				$Search = \trim($Search . ' to:' . implode(',', $Senders)) . $this->getSearchFoldersString();
-				$Folder = "Sent";
-			} else {
-				$Search = \trim($Search . ' from:' . implode(',', $Senders)) . $this->getSearchFoldersString();
-				$Folder = "INBOX";
-			}
-		}
+    public function GetMessages($AccountID, $Senders, $Period = '', $Offset = 0, $Limit = 20, $Search = '', $Filters = '', $UseThreading = false, $InboxUidnext = '', $SortBy = null, $SortOrder = null)
+    {
+        // removed  $Folder = 'INBOX' argument
+        Api::checkUserRoleIsAtLeast(UserRole::NormalUser);
 
-		$aFilters = [];
-		$sFilters = \strtolower(\trim((string) $Filters));
-		if (0 < \strlen($sFilters)) {
-			$aFilters = \array_filter(\explode(',', $sFilters), function ($sValue) {
-				return '' !== trim($sValue);
-			});
-		}
+        $user = Api::getAuthenticatedUser();
+        $sSearchFoldersMode = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
 
-		if (!empty($Period) && isset($Period[0]) && is_numeric($Period[0])) {
-			$date = new DateTime('now');
-			$toDate = $date->format('Y.m.d');
-			$date->modify('-' . $Period);
-			$fromDate = $date->format('Y.m.d');
+        $sSearch = \trim((string) $Search);
+        if (is_array($Senders) && count($Senders) > 0) {
+            if ($sSearchFoldersMode === 'sent') {
+                $Search = \trim($Search . ' to:' . implode(',', $Senders)) . $this->getSearchFoldersString();
+                $Folder = "Sent";
+            } else {
+                $Search = \trim($Search . ' from:' . implode(',', $Senders)) . $this->getSearchFoldersString();
+                $Folder = "INBOX";
+            }
+        }
 
-			$Search .= ' date:'. $fromDate . '/' . $toDate;
-		}
+        $aFilters = [];
+        $sFilters = \strtolower(\trim((string) $Filters));
+        if (0 < \strlen($sFilters)) {
+            $aFilters = \array_filter(\explode(',', $sFilters), function ($sValue) {
+                return '' !== trim($sValue);
+            });
+        }
 
-		$iOffset = (int) $Offset;
-		$iLimit = (int) $Limit;
+        if (!empty($Period) && isset($Period[0]) && is_numeric($Period[0])) {
+            $date = new DateTime('now');
+            $toDate = $date->format('Y.m.d');
+            $date->modify('-' . $Period);
+            $fromDate = $date->format('Y.m.d');
 
-		if (0 > $iOffset || 0 >= $iLimit || 200 < $iLimit) {
-			throw new \Aurora\System\Exceptions\ApiException(\Aurora\System\Notifications::InvalidInputParameter);
-		}
+            $Search .= ' date:'. $fromDate . '/' . $toDate;
+        }
 
-		$MailModule = MailModule::getInstance();
-		$oAccount = $MailModule->getAccountsManager()->getAccountById($AccountID);
+        $iOffset = (int) $Offset;
+        $iLimit = (int) $Limit;
 
-		self::checkAccess($oAccount);
+        if (0 > $iOffset || 0 >= $iLimit || 200 < $iLimit) {
+            throw new \Aurora\System\Exceptions\ApiException(\Aurora\System\Notifications::InvalidInputParameter);
+        }
 
-		$aSortInfo = $MailModule->getSortInfo($SortBy, $SortOrder);
+        $MailModule = MailModule::getInstance();
+        $oAccount = $MailModule->getAccountsManager()->getAccountById($AccountID);
 
-		$sSortBy = \strtoupper($aSortInfo[0]);
-		$sSortOrder = $aSortInfo[1] === \Aurora\System\Enums\SortOrder::DESC ? 'REVERSE' : '';
+        self::checkAccess($oAccount);
 
-		$oMessageCollectionResult = \Aurora\Modules\Mail\Classes\MessageCollection::createInstance();
-		$oMessageCollectionResult->FolderName = $Folder;
-		$oMessageCollectionResult->Limit = $iLimit;
-		$oMessageCollectionResult->Offset = $iOffset;
-		$oMessageCollectionResult->Search = $Search;
-		$oMessageCollectionResult->Filters = implode(',', $aFilters);
+        $aSortInfo = $MailModule->getSortInfo($SortBy, $SortOrder);
 
-		$aFolderUids = [];
-		$aUids = [];
-		$iMessagesCount = 0;
-		$iMessagesResultCount = 0;
-		$iMessagesUnseenCount = 0;
-		$aFoldersHash = [];
+        $sSortBy = \strtoupper($aSortInfo[0]);
+        $sSortOrder = $aSortInfo[1] === \Aurora\System\Enums\SortOrder::DESC ? 'REVERSE' : '';
 
-		$sSortBy = 'ARRIVAL';
-		$sSortOrder = $SortOrder === \Aurora\System\Enums\SortOrder::DESC ? 'REVERSE' : '';
+        $oMessageCollectionResult = \Aurora\Modules\Mail\Classes\MessageCollection::createInstance();
+        $oMessageCollectionResult->FolderName = $Folder;
+        $oMessageCollectionResult->Limit = $iLimit;
+        $oMessageCollectionResult->Offset = $iOffset;
+        $oMessageCollectionResult->Search = $Search;
+        $oMessageCollectionResult->Filters = implode(',', $aFilters);
 
-		$aFolderObjects = \Closure::bind(
-			function ($oMailModule) use ($oAccount, $Folder, $Search, &$sSearch) { 
-				return $oMailModule->getFoldersForSearch($oAccount, $Folder, $Search, $sSearch);
-			}, null, MailModule::class
-		)($MailModule);
+        $aFolderUids = [];
+        $aUids = [];
+        $iMessagesCount = 0;
+        $iMessagesResultCount = 0;
+        $iMessagesUnseenCount = 0;
+        $aFoldersHash = [];
 
-		$aFolders = [];
-		foreach ($aFolderObjects as $oFolder) {
-			if ($this->isAllowedFolder($oFolder) || ($oFolder->getType() === 2 && $sSearchFoldersMode === 'sent')) {
-				$aFolders[] = $oFolder->getRawFullName();
-			}
-		}
+        $sSortBy = 'ARRIVAL';
+        $sSortOrder = $SortOrder === \Aurora\System\Enums\SortOrder::DESC ? 'REVERSE' : '';
 
-		foreach ($aFolders as $sFolder) {
-			$aUnifiedInfo = $MailModule->getMailManager()->getUnifiedMailboxMessagesInfo(
-				$oAccount, 
-				$sFolder, 
-				$sSearch, 
-				$aFilters, 
-				$UseThreading, 
-				$iOffset + $iLimit, 
-				$sSortBy, 
-				$sSortOrder
-			);
-			if (is_array($aUnifiedInfo['Uids']) && count($aUnifiedInfo['Uids']) > 0) {
-				foreach($aUnifiedInfo['Uids'] as $iKey => $aUid) {
-					$aUnifiedInfo['Uids'][$iKey]['folder'] = $sFolder;
-				}
-				$aUids = array_merge(
-					$aUids,
-					$aUnifiedInfo['Uids']
-				);
-			}
-			$iMessagesCount += $aUnifiedInfo['Count'];
-			$iMessagesResultCount += $aUnifiedInfo['ResultCount'];
-			$iMessagesUnseenCount += $aUnifiedInfo['UnreadCount'];
-			$aFoldersHash[] = $sFolder . ':' . $aUnifiedInfo['FolderHash'];
-		}
+        $aFolderObjects = \Closure::bind(
+            function ($oMailModule) use ($oAccount, $Folder, $Search, &$sSearch) {
+                return $oMailModule->getFoldersForSearch($oAccount, $Folder, $Search, $sSearch);
+            },
+            null,
+            MailModule::class
+        )($MailModule);
 
-		// sort by time
-		usort($aUids, function($a, $b) use ($SortOrder) {
-			if ($SortOrder === \Aurora\System\Enums\SortOrder::DESC) {
-				return (strtotime($a['internaldate']) < strtotime($b['internaldate'])) ? 1 : -1;
-			} else {
-				return (strtotime($a['internaldate']) > strtotime($b['internaldate'])) ? 1 : -1;
-			}
-		});
-		if (count($aUids) >= 0) {
-			$aUids = array_slice($aUids, $iOffset, $iLimit);
-		}
+        $aFolders = [];
+        foreach ($aFolderObjects as $oFolder) {
+            if ($this->isAllowedFolder($oFolder) || ($oFolder->getType() === 2 && $sSearchFoldersMode === 'sent')) {
+                $aFolders[] = $oFolder->getRawFullName();
+            }
+        }
 
-		$aAllMessages = [];
-		$aNextUids = [];
-		$aFoldersHash = [];
+        foreach ($aFolders as $sFolder) {
+            $aUnifiedInfo = $MailModule->getMailManager()->getUnifiedMailboxMessagesInfo(
+                $oAccount,
+                $sFolder,
+                $sSearch,
+                $aFilters,
+                $UseThreading,
+                $iOffset + $iLimit,
+                $sSortBy,
+                $sSortOrder
+            );
+            if (is_array($aUnifiedInfo['Uids']) && count($aUnifiedInfo['Uids']) > 0) {
+                foreach ($aUnifiedInfo['Uids'] as $iKey => $aUid) {
+                    $aUnifiedInfo['Uids'][$iKey]['folder'] = $sFolder;
+                }
+                $aUids = array_merge(
+                    $aUids,
+                    $aUnifiedInfo['Uids']
+                );
+            }
+            $iMessagesCount += $aUnifiedInfo['Count'];
+            $iMessagesResultCount += $aUnifiedInfo['ResultCount'];
+            $iMessagesUnseenCount += $aUnifiedInfo['UnreadCount'];
+            $aFoldersHash[] = $sFolder . ':' . $aUnifiedInfo['FolderHash'];
+        }
 
-		$aInboxUidsNext = [];
-		if (!empty($InboxUidnext)) {
-			$aInboxUids = \explode('.', $InboxUidnext);
-			foreach ($aInboxUids as $aUid) {
-				$aUidsNext = \explode(':', $aUid);
-				if (count($aUidsNext) === 2) {
-					$aInboxUidsNext[$aUidsNext[0]] = $aUidsNext[1];
-				}
-			}
-		}
+        // sort by time
+        usort($aUids, function ($a, $b) use ($SortOrder) {
+            if ($SortOrder === \Aurora\System\Enums\SortOrder::DESC) {
+                return (strtotime($a['internaldate']) < strtotime($b['internaldate'])) ? 1 : -1;
+            } else {
+                return (strtotime($a['internaldate']) > strtotime($b['internaldate'])) ? 1 : -1;
+            }
+        });
+        if (count($aUids) >= 0) {
+            $aUids = array_slice($aUids, $iOffset, $iLimit);
+        }
 
-		foreach ($aUids as $aUid) {
-			$aFolderUids[$aUid['folder']][] = $aUid['uid'];
-		}
-		foreach ($aFolderUids as $sFolder => $aFldUids) {
-			$sFolder = (string) $sFolder;
-			$sInboxUidnext = isset($aInboxUidsNext[$sFolder]) ? $aInboxUidsNext[$sFolder] : '';
+        $aAllMessages = [];
+        $aNextUids = [];
+        $aFoldersHash = [];
 
-			$oMessageCollection = $MailModule->getMailManager()->getMessageListByUids(
-				$oAccount, $sFolder, $aFldUids, $sInboxUidnext
-			);
+        $aInboxUidsNext = [];
+        if (!empty($InboxUidnext)) {
+            $aInboxUids = \explode('.', $InboxUidnext);
+            foreach ($aInboxUids as $aUid) {
+                $aUidsNext = \explode(':', $aUid);
+                if (count($aUidsNext) === 2) {
+                    $aInboxUidsNext[$aUidsNext[0]] = $aUidsNext[1];
+                }
+            }
+        }
 
-			if ($UseThreading) {
-				$oMessageCollection->ForeachList(function (/* @var $oMessage \Aurora\Modules\Mail\Classes\Message */ $oMessage) use ($aUids, $sFolder) {
-					$iUid = $oMessage->getUid();
-					$aUidInfo = current(array_filter($aUids, function ($aUid) use ($sFolder, $iUid) {
-						return $aUid['folder'] === $sFolder && $aUid['uid'] == $iUid;
-					}));
-					if (isset($aUidInfo['threads']) && is_array($aUidInfo['threads'])) {
-						$oMessage->setThreads($aUidInfo['threads']);
-					}
-				});
-			}
+        foreach ($aUids as $aUid) {
+            $aFolderUids[$aUid['folder']][] = $aUid['uid'];
+        }
+        foreach ($aFolderUids as $sFolder => $aFldUids) {
+            $sFolder = (string) $sFolder;
+            $sInboxUidnext = isset($aInboxUidsNext[$sFolder]) ? $aInboxUidsNext[$sFolder] : '';
 
-			foreach ($oMessageCollection->New as $aNew) {
-				$aNew['Folder'] = $sFolder;
-				$oMessageCollectionResult->New[] = $aNew;
-			}
+            $oMessageCollection = $MailModule->getMailManager()->getMessageListByUids(
+                $oAccount,
+                $sFolder,
+                $aFldUids,
+                $sInboxUidnext
+            );
 
-			$aNextUids[] = $sFolder . ':' . $oMessageCollection->UidNext;
-			$aMessages = $oMessageCollection->GetAsArray();
-			foreach ($aMessages as $oMessage) {
-				$oMessage->setAccountId($oAccount->Id);
-				$oMessage->setUnifiedUid($oAccount->Id . ':' . $sFolder . ':' . $oMessage->getUid());
-			}
-			$aAllMessages = array_merge($aAllMessages, $aMessages);
-		}
+            if ($UseThreading) {
+                $oMessageCollection->ForeachList(function (/* @var $oMessage \Aurora\Modules\Mail\Classes\Message */ $oMessage) use ($aUids, $sFolder) {
+                    $iUid = $oMessage->getUid();
+                    $aUidInfo = current(array_filter($aUids, function ($aUid) use ($sFolder, $iUid) {
+                        return $aUid['folder'] === $sFolder && $aUid['uid'] == $iUid;
+                    }));
+                    if (isset($aUidInfo['threads']) && is_array($aUidInfo['threads'])) {
+                        $oMessage->setThreads($aUidInfo['threads']);
+                    }
+                });
+            }
 
-		// sort by time
-		usort($aAllMessages, function($a, $b) use ($SortOrder) {
-			if ($SortOrder === \Aurora\System\Enums\SortOrder::DESC) {
-				return ($a->getReceivedOrDateTimeStamp() < $b->getReceivedOrDateTimeStamp()) ? 1 : -1;
-			} else {
-				return ($a->getReceivedOrDateTimeStamp() > $b->getReceivedOrDateTimeStamp()) ? 1 : -1;
-			}
-		});
+            foreach ($oMessageCollection->New as $aNew) {
+                $aNew['Folder'] = $sFolder;
+                $oMessageCollectionResult->New[] = $aNew;
+            }
 
-		$oMessageCollectionResult->Uids = array_map(function ($oMessage) {
-			return $oMessage->getUnifiedUid();
-		}, $aAllMessages);
+            $aNextUids[] = $sFolder . ':' . $oMessageCollection->UidNext;
+            $aMessages = $oMessageCollection->GetAsArray();
+            foreach ($aMessages as $oMessage) {
+                $oMessage->setAccountId($oAccount->Id);
+                $oMessage->setUnifiedUid($oAccount->Id . ':' . $sFolder . ':' . $oMessage->getUid());
+            }
+            $aAllMessages = array_merge($aAllMessages, $aMessages);
+        }
 
-		$oMessageCollectionResult->MessageCount = $iMessagesCount;
-		$oMessageCollectionResult->MessageResultCount = $iMessagesResultCount;
-		$oMessageCollectionResult->MessageUnseenCount = $iMessagesUnseenCount;
-		$oMessageCollectionResult->UidNext = implode('.', $aNextUids);
-		$oMessageCollectionResult->FolderHash = implode('.', $aFoldersHash);
-		$oMessageCollectionResult->AddArray($aAllMessages);
+        // sort by time
+        usort($aAllMessages, function ($a, $b) use ($SortOrder) {
+            if ($SortOrder === \Aurora\System\Enums\SortOrder::DESC) {
+                return ($a->getReceivedOrDateTimeStamp() < $b->getReceivedOrDateTimeStamp()) ? 1 : -1;
+            } else {
+                return ($a->getReceivedOrDateTimeStamp() > $b->getReceivedOrDateTimeStamp()) ? 1 : -1;
+            }
+        });
 
-		return $oMessageCollectionResult;
-	}
+        $oMessageCollectionResult->Uids = array_map(function ($oMessage) {
+            return $oMessage->getUnifiedUid();
+        }, $aAllMessages);
+
+        $oMessageCollectionResult->MessageCount = $iMessagesCount;
+        $oMessageCollectionResult->MessageResultCount = $iMessagesResultCount;
+        $oMessageCollectionResult->MessageUnseenCount = $iMessagesUnseenCount;
+        $oMessageCollectionResult->UidNext = implode('.', $aNextUids);
+        $oMessageCollectionResult->FolderHash = implode('.', $aFoldersHash);
+        $oMessageCollectionResult->AddArray($aAllMessages);
+
+        return $oMessageCollectionResult;
+    }
 }
