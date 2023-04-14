@@ -216,6 +216,7 @@ class Module extends \Aurora\System\Module\AbstractModule
         $user = Api::getAuthenticatedUser();
         $sSearchFoldersMode = $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox');
 
+        $Folder = 'INBOX';
         $sSearch = \trim((string) $Search);
         if (is_array($Senders) && count($Senders) > 0) {
             if ($sSearchFoldersMode === 'sent') {
@@ -254,7 +255,7 @@ class Module extends \Aurora\System\Module\AbstractModule
         $MailModule = MailModule::getInstance();
         $oAccount = $MailModule->getAccountsManager()->getAccountById($AccountID);
 
-        self::checkAccess($oAccount);
+        MailModule::checkAccess($oAccount);
 
         $aSortInfo = $MailModule->getSortInfo($SortBy, $SortOrder);
 
