@@ -19,6 +19,8 @@ use DateTime;
  * @license https://afterlogic.com/products/common-licensing Afterlogic Software License
  * @copyright Copyright (c) 2023, Afterlogic Corp.
  *
+ * @property Settings $oModuleSettings
+ *
  * @package Modules
  */
 class Module extends \Aurora\System\Module\AbstractModule
@@ -34,7 +36,7 @@ class Module extends \Aurora\System\Module\AbstractModule
      */
     public function init()
     {
-        $this->aSystemFoldersToExclude = $this->getConfig('SystemFoldersToExclude', []);
+        $this->aSystemFoldersToExclude = $this->oModuleSettings->SystemFoldersToExclude;
     }
 
     /**
@@ -61,7 +63,7 @@ class Module extends \Aurora\System\Module\AbstractModule
         $user = Api::getAuthenticatedUser();
         if ($user) {
             return [
-                'SenderFolderMinMessagesCount' => $this->getConfig('SenderFolderMinMessagesCount', 2),
+                'SenderFolderMinMessagesCount' => $this->oModuleSettings->SenderFolderMinMessagesCount,
                 'NumberOfSendersToDisplay' => $user->getExtendedProp(self::GetName() . '::NumberOfSendersToDisplay', 3),
                 'SearchPeriod' => $user->getExtendedProp(self::GetName() . '::SearchPeriod', '1 month'),
                 'SearchFolders' => $user->getExtendedProp(self::GetName() . '::SearchFolders', 'inbox'),
