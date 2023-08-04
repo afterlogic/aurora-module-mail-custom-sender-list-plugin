@@ -449,7 +449,7 @@ CMessageListView.prototype.createDatePickerObject = function (oElement, value)
 		}
 	});
 
-	$(oElement).mousedown(function() {
+	$(oElement).on('mousedown', function() {
 		$('#ui-datepicker-div').toggle();
 	});
 };
