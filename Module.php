@@ -113,7 +113,7 @@ class Module extends \Aurora\System\Module\AbstractModule
             $date->modify('-' . $Period);
             $fromDate = $date->format('Y.m.d');
 
-            $sSearch = 'date:'. $fromDate . '/' . $toDate;
+            $sSearch = 'date:' . $fromDate . '/' . $toDate;
         }
 
         $senders = [];
@@ -162,7 +162,7 @@ class Module extends \Aurora\System\Module\AbstractModule
                     } else {
                         $fromColl = $message->getFrom();
                         if ($fromColl && 0 < $fromColl->Count()) {
-                            $from =& $fromColl->GetByIndex(0);
+                            $from = &$fromColl->GetByIndex(0);
                             if ($from) {
                                 $fromEmail = trim($from->GetEmail());
                                 if (!isset($senders[$fromEmail])) {
@@ -260,7 +260,7 @@ class Module extends \Aurora\System\Module\AbstractModule
             $date->modify('-' . $Period);
             $fromDate = $date->format('Y.m.d');
 
-            $Search .= ' date:'. $fromDate . '/' . $toDate;
+            $Search .= ' date:' . $fromDate . '/' . $toDate;
         }
 
         $iOffset = (int) $Offset;
